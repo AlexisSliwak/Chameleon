@@ -20,3 +20,9 @@ venv/
 # Generated run artifacts
 output/*
 !output/.gitkeep
+
+# Private local evaluation evidence and viewer certificates
+.project-evaluation/
+.project-audit/
+*.pem
+*.key

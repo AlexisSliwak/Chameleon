@@ -1,0 +1,158 @@
+{
+  "task_id": "synthetic_rotated-workshop",
+  "notes": "Agent-authored synthetic development challenge; not independent human-quality holdout. Editorial workshop with rotated orange ticket group; maintain ticket/text relative transforms and intentional internal overlap while preserving primary headline hierarchy.",
+  "source": {
+    "canvas": {
+      "width": 1000,
+      "height": 1000
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "x": 0,
+        "y": 0,
+        "width": 1000,
+        "height": 1000,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(247,242,227,1)",
+        "z_index": 0
+      },
+      {
+        "id": "eyebrow",
+        "type": "text",
+        "x": 70,
+        "y": 65,
+        "width": 860,
+        "height": 50,
+        "content": "OPEN STUDIO / SATURDAY",
+        "font_family": "Solstice Sans",
+        "font_size": 25,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "headline",
+        "type": "text",
+        "x": 70,
+        "y": 180,
+        "width": 800,
+        "height": 190,
+        "content": "Make something\nworth keeping.",
+        "font_family": "Solstice Serif",
+        "font_size": 64,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "ticket",
+        "type": "shape",
+        "x": 610,
+        "y": 440,
+        "width": 280,
+        "height": 160,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(234,104,49,1)",
+        "z_index": 0,
+        "group_id": "ticket",
+        "rotation": -10
+      },
+      {
+        "id": "ticket-title",
+        "type": "text",
+        "x": 637,
+        "y": 468,
+        "width": 226,
+        "height": 50,
+        "content": "HANDS ON",
+        "font_family": "Solstice Sans",
+        "font_size": 28,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2,
+        "group_id": "ticket",
+        "rotation": -10,
+        "text_align": "center"
+      },
+      {
+        "id": "ticket-detail",
+        "type": "text",
+        "x": 637,
+        "y": 530,
+        "width": 226,
+        "height": 36,
+        "content": "ALL LEVELS",
+        "font_family": "Solstice Sans",
+        "font_size": 19,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2,
+        "group_id": "ticket",
+        "rotation": -10,
+        "text_align": "center"
+      },
+      {
+        "id": "description",
+        "type": "text",
+        "x": 70,
+        "y": 470,
+        "width": 450,
+        "height": 150,
+        "content": "A guided afternoon of making,\nsharing and small discoveries.",
+        "font_family": "Solstice Sans",
+        "font_size": 29,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "schedule",
+        "type": "text",
+        "x": 70,
+        "y": 700,
+        "width": 850,
+        "height": 80,
+        "content": "14:00 - 17:00 / Studio 6\nMaterials and refreshments included",
+        "font_family": "Solstice Sans",
+        "font_size": 25,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "action-plate",
+        "type": "shape",
+        "x": 70,
+        "y": 840,
+        "width": 320,
+        "height": 64,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(234,104,49,1)",
+        "z_index": 0,
+        "group_id": "action"
+      },
+      {
+        "id": "action-label",
+        "type": "text",
+        "x": 82,
+        "y": 856,
+        "width": 296,
+        "height": 34,
+        "content": "Book a workshop",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2,
+        "group_id": "action",
+        "text_align": "center"
+      }
+    ]
+  },
+  "target_canvas": {
+    "width": 1400,
+    "height": 600
+  }
+}

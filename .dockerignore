@@ -1,0 +1,11 @@
+.git
+.venv
+cr-renderer
+__pycache__
+**/__pycache__
+output
+.project-evaluation
+.project-audit
+viewer
+tests
+scripts

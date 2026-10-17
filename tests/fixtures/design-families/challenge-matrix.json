@@ -1,0 +1,115 @@
+{
+  "provenance": "Agent-authored synthetic development challenges; no independent human-quality holdout claim.",
+  "families": [
+    {
+      "file": "editorial-event.json",
+      "source_intent": "Editorial event: left-aligned oversized title; paired time/location; dark program panel; isolated reservation action.",
+      "targets": [
+        {
+          "width": 900,
+          "height": 1200
+        },
+        {
+          "width": 1200,
+          "height": 628
+        },
+        {
+          "width": 600,
+          "height": 900
+        },
+        {
+          "width": 728,
+          "height": 90
+        }
+      ]
+    },
+    {
+      "file": "asymmetric-space.json",
+      "source_intent": "Sparse asymmetric composition: upper-left voice and bottom-right product balanced by deliberate empty upper-right region; whitespace is meaningful.",
+      "targets": [
+        {
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "width": 600,
+          "height": 900
+        },
+        {
+          "width": 1080,
+          "height": 1080
+        },
+        {
+          "width": 1600,
+          "height": 400
+        }
+      ]
+    },
+    {
+      "file": "commerce-triptych.json",
+      "source_intent": "Three equal product cards with inseparable names/prices; reading order sunrise/golden/twilight, common headline and separate CTA/footer.",
+      "targets": [
+        {
+          "width": 1200,
+          "height": 900
+        },
+        {
+          "width": 600,
+          "height": 1200
+        },
+        {
+          "width": 1080,
+          "height": 1080
+        },
+        {
+          "width": 1600,
+          "height": 400
+        }
+      ]
+    },
+    {
+      "file": "transparent-hero.json",
+      "source_intent": "Transparent product overlaps intentional light halo; left copy/action and right hero form two balanced panels. Halo must stay behind product; do not score its overlap as a collision.",
+      "targets": [
+        {
+          "width": 1200,
+          "height": 900
+        },
+        {
+          "width": 900,
+          "height": 1200
+        },
+        {
+          "width": 1080,
+          "height": 1080
+        },
+        {
+          "width": 1600,
+          "height": 400
+        }
+      ]
+    },
+    {
+      "file": "rotated-workshop.json",
+      "source_intent": "Editorial workshop with rotated orange ticket group; maintain ticket/text relative transforms and intentional internal overlap while preserving primary headline hierarchy.",
+      "targets": [
+        {
+          "width": 1000,
+          "height": 1000
+        },
+        {
+          "width": 1400,
+          "height": 600
+        },
+        {
+          "width": 600,
+          "height": 900
+        },
+        {
+          "width": 728,
+          "height": 90
+        }
+      ]
+    }
+  ]
+}

@@ -1,2 +1,1 @@
-Pillow>=10.0
-git+https://github.com/CyberAgentAILab/cr-renderer
+-r requirements.lock.txt

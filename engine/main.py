@@ -1,139 +1,131 @@
-"""
-Orchestrator — you shouldn't need to edit this file. It:
-  1. Reads every *.json task file from /app/input (source + target_canvas)
-  2. Calls your resize() from resize.py
-  3. Runs a quick self-check (structural only — NOT the official scoring;
-     see RULES.md for what the judge actually checks)
-  4. Writes <task>_output.json and <task>_output.png to /app/output
+"""Offline batch runner: validate, render for real, then publish each output pair.
 
-Mirrors the same input/ -> output/ convention as the earlier India-program
-challenges: drop task files in, get one JSON + one PNG out per task, no
-manual steps in between.
+Per-task failures remove stale outputs for that task and do not stop later tasks.
+Pair publication rolls back on ordinary exceptions; two filesystem names cannot
+be atomically replaced together across process termination. Reruns clean stale pairs.
 """
-
+import argparse
+import copy
 import json
+import os
 import sys
+import tempfile
 import time
 from pathlib import Path
 
-from engine.resize import resize
-
-# Relative to the current working directory, which is /app both inside the
-# Docker image (WORKDIR /app) and when run locally from this repo's root -
-# so this works identically in both "python -m engine.main" (no Docker) and
-# the containerized entrypoint.
-INPUT_DIR = Path("input")
-OUTPUT_DIR = Path("output")
-ASSETS_DIR = Path("brand_kit/assets")
-
-REQUIRED_COMMON = ["id", "type", "x", "y", "width", "height"]
-REQUIRED_BY_TYPE = {
-    "text": ["content", "font_family", "font_size", "color"],
-    "image": ["asset_id"],
-    "shape": ["shape_type", "fill_color"],
-}
+from engine.validation import validate_source, validate_target, validate_output
 
 
-def self_check(source: dict, output: dict) -> list[str]:
-    """Quick, non-authoritative sanity check so obvious mistakes are caught
-    locally before you submit. This is NOT the official scorer — see
-    RULES.md for what actually gates and grades your submission."""
-    problems = []
-
-    if "canvas" not in output or "elements" not in output:
-        return ["output is missing top-level 'canvas' or 'elements'"]
-
-    src_ids = {el["id"] for el in source["elements"]}
-    out_ids = {el.get("id") for el in output["elements"]}
-    if src_ids != out_ids:
-        problems.append(
-            f"element id mismatch — missing {sorted(src_ids - out_ids)}, "
-            f"unexpected {sorted(out_ids - src_ids)}"
-        )
-
-    cw, ch = output["canvas"].get("width"), output["canvas"].get("height")
-    for el in output["elements"]:
-        for field in REQUIRED_COMMON:
-            if field not in el:
-                problems.append(f"element '{el.get('id')}': missing '{field}'")
-                continue
-        for field in REQUIRED_BY_TYPE.get(el.get("type"), []):
-            if field not in el:
-                problems.append(f"element '{el.get('id')}' (type={el.get('type')}): missing '{field}'")
-        if cw and ch and all(k in el for k in ("x", "y", "width", "height")):
-            x1, y1 = el["x"] + el["width"], el["y"] + el["height"]
-            if el["x"] < -0.5 or el["y"] < -0.5 or x1 > cw + 0.5 or y1 > ch + 0.5:
-                problems.append(f"element '{el.get('id')}' is off-canvas ({cw}x{ch})")
-
-    return problems
+def resize_with_diagnostics(source, target, fonts_dir=None, assets_dir=None):
+    from engine.resize import resize_with_diagnostics as implementation
+    return implementation(source, target, fonts_dir=fonts_dir, assets_dir=assets_dir)
 
 
-def render_to_png(design: dict, assets_dir: Path, png_path: Path) -> None:
-    """Renders `design` to a PNG. Prefers the real renderer
-    (transformer-convertor, wrapping cr-renderer) if it's vendored into
-    ./renderer; falls back to a plain box-and-label preview otherwise so
-    this repo is runnable before that's wired in. Swap the fallback out
-    once ./renderer is populated — don't ship the fallback's output as a
-    real preview."""
-    try:
-        from renderer.converter.convert import render_design_to_png  # type: ignore
-        render_design_to_png(design, assets_dir, str(png_path))
-        return
-    except ImportError:
-        pass
-
-    _fallback_render(design, png_path)
+def render_to_png(design, assets_dir, png_path, fonts_dir=None):
+    from renderer.converter.convert import render_design_to_png
+    warnings = render_design_to_png(design, assets_dir, str(png_path), fonts_dir=fonts_dir,
+                                    max_size=max(design['canvas'].values()))
+    # The import and render exceptions intentionally propagate: no box fallback.
+    from PIL import Image
+    with Image.open(png_path) as image:
+        if image.format != 'PNG':
+            raise ValueError('renderer did not produce PNG')
+        if image.size != (design['canvas']['width'], design['canvas']['height']):
+            raise ValueError('renderer PNG dimensions differ from requested canvas')
+        image.verify()
+    return warnings or []
 
 
-def _fallback_render(design: dict, png_path: Path) -> None:
-    """Placeholder only — labeled boxes, not real text/asset rendering.
-    Confirms the pipeline runs end-to-end; do not use this to judge your
-    actual layout quality. Use transformer-convertor (RULES.md / FAQ Q3)
-    for a real preview."""
-    from PIL import Image, ImageDraw
-
-    w, h = design["canvas"]["width"], design["canvas"]["height"]
-    img = Image.new("RGB", (w, h), "#EDE7DD")
-    draw = ImageDraw.Draw(img)
-    palette = {"text": "#2B6CB0", "image": "#B7791F", "shape": "#2F855A"}
-    for el in sorted(design["elements"], key=lambda e: e.get("z_index", 0)):
-        x0, y0 = el["x"], el["y"]
-        x1, y1 = x0 + el["width"], y0 + el["height"]
-        color = palette.get(el["type"], "#555555")
-        draw.rectangle([x0, y0, x1, y1], outline=color, width=3)
-        draw.text((x0 + 4, y0 + 4), el["id"], fill=color)
-    img.save(png_path)
+def _json_write(path, value):
+    path.write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + '\n', encoding='utf-8')
 
 
-def main() -> int:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    task_files = sorted(INPUT_DIR.glob("*.json"))
-    if not task_files:
-        print(f"No task files found in {INPUT_DIR}", file=sys.stderr)
+def _remove_pair(paths):
+    for path in paths:
+        path.unlink(missing_ok=True)
+
+
+def run_batch(input_dir, output_dir, assets_dir, fonts_dir=None):
+    input_dir, output_dir = Path(input_dir), Path(output_dir)
+    if input_dir.resolve() == output_dir.resolve():
+        print(json.dumps({'status': 'failed', 'error': 'input and output directories must differ'}), file=sys.stderr)
         return 1
+    assets_dir = Path(assets_dir).resolve()
+    fonts_dir = Path(fonts_dir).resolve() if fonts_dir is not None else assets_dir.parent / 'fonts'
+    output_dir.mkdir(parents=True, exist_ok=True)
+    tasks = sorted(input_dir.glob('*.json'))
+    if not tasks:
+        print(json.dumps({'status': 'failed', 'error': f'No task files found in {input_dir}'}), file=sys.stderr)
+        return 1
+    failures = 0
+    for task_path in tasks:
+        started = time.perf_counter()
+        record = {'task': task_path.name, 'status': 'failed', 'warnings': [], 'timings_seconds': {}}
+        destinations = [output_dir / f'{task_path.stem}_output.json', output_dir / f'{task_path.stem}_output.png']
+        try:
+            _remove_pair(destinations)
+            task = json.loads(task_path.read_text(encoding='utf-8'))
+            if not isinstance(task, dict) or 'source' not in task or 'target_canvas' not in task:
+                raise ValueError('task must contain source and target_canvas')
+            source, target = task['source'], task['target_canvas']
+            errors = validate_source(source) + validate_target(target)
+            if errors:
+                raise ValueError('; '.join(errors))
+            original = copy.deepcopy(source)
+            original_target = copy.deepcopy(target)
+            resize_started = time.perf_counter()
+            output, layout_diagnostics = resize_with_diagnostics(
+                source, target, fonts_dir=fonts_dir, assets_dir=assets_dir)
+            # Reject broken diagnostics before publishing a supposedly successful pair.
+            json.dumps(layout_diagnostics, allow_nan=False)
+            record['layout'] = layout_diagnostics
+            record['timings_seconds']['resize'] = time.perf_counter() - resize_started
+            if source != original or target != original_target:
+                raise ValueError('resize mutated its input source or target_canvas')
+            errors = validate_output(original, original_target, output)
+            if errors:
+                raise ValueError('; '.join(errors))
+            with tempfile.TemporaryDirectory(prefix='.chameleon-', dir=output_dir) as temporary:
+                staging = Path(temporary)
+                staged_json, staged_png = staging / 'result.json', staging / 'result.png'
+                _json_write(staged_json, output)
+                render_started = time.perf_counter()
+                warnings = list(render_to_png(output, assets_dir, staged_png, fonts_dir))
+                json.dumps(warnings, allow_nan=False)
+                record['warnings'] = warnings
+                record['timings_seconds']['render'] = time.perf_counter() - render_started
+                if not staged_png.is_file() or staged_png.stat().st_size == 0:
+                    raise ValueError('renderer returned without producing a PNG')
+                try:
+                    os.replace(staged_json, destinations[0])
+                    os.replace(staged_png, destinations[1])
+                except Exception:
+                    _remove_pair(destinations)
+                    raise
+            record['status'] = 'ok'
+        except Exception as exc:
+            failures += 1
+            record['error'] = f'{type(exc).__name__}: {exc}'
+            try:
+                _remove_pair(destinations)
+            except OSError as cleanup_error:
+                record['cleanup_error'] = str(cleanup_error)
+        record['timings_seconds']['total'] = time.perf_counter() - started
+        # Diagnostics never enter the submitted design JSON. stderr is JSONL.
+        print(json.dumps(record, ensure_ascii=False, allow_nan=False), file=sys.stderr)
+    return 1 if failures else 0
 
-    exit_code = 0
-    for task_path in task_files:
-        task = json.loads(task_path.read_text())
-        source, target_canvas = task["source"], task["target_canvas"]
 
-        t0 = time.time()
-        output = resize(source, target_canvas)
-        elapsed = time.time() - t0
-
-        problems = self_check(source, output)
-        stem = task_path.stem
-        (OUTPUT_DIR / f"{stem}_output.json").write_text(json.dumps(output, indent=2))
-        render_to_png(output, ASSETS_DIR, OUTPUT_DIR / f"{stem}_output.png")
-
-        status = "OK" if not problems else f"{len(problems)} self-check warning(s)"
-        print(f"[{task_path.name}] {status} in {elapsed:.2f}s "
-              f"-> {stem}_output.json, {stem}_output.png")
-        for p in problems:
-            print(f"    - {p}")
-
-    return exit_code
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input-dir', type=Path, default=Path('input'))
+    parser.add_argument('--output-dir', type=Path, default=Path('output'))
+    parser.add_argument('--assets-dir', type=Path, default=Path('brand_kit/assets'))
+    parser.add_argument('--fonts-dir', type=Path, default=None,
+                        help='Defaults to fonts/ beside assets directory')
+    args = parser.parse_args(argv)
+    return run_batch(args.input_dir, args.output_dir, args.assets_dir, args.fonts_dir)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

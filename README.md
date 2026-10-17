@@ -1,99 +1,90 @@
-# CHAMELEON — starter repo
+# Chameleon
 
-This is the scaffolding for your engine. It handles input loading, output
-writing, rendering, and Docker packaging — so the only file you need to
-edit is **`engine/resize.py`**.
+Retarget an existing design to a new canvas while preserving its elements, text, font families and image assets. The engine compares source-preserving fits, bounded responsive arrangements, editorial compositions and repeated-card layouts. It measures actual glyphs and visible image footprints, preserves backing relationships and reading order, and checks a shortlist against rendered imagery.
 
-```
-input:  a task JSON (source design + target canvas)
-              |
-              v
-        engine/resize.py   <-- YOU IMPLEMENT THIS
-              |
-              v
-output: <task>_output.json  (schema-valid resized design)
-        <task>_output.png   (rendered preview)
-```
+The engine, batch runner, tests, rendered comparison harnesses and local viewer are implemented. The current improvement round addresses tiny products, oversized action labels, detached contrast panels and reordered product cards. Selection remains deterministic and offline; it uses no hosted AI service or model weights.
 
-Both the JSON and the PNG are what get evaluated — see `RULES.md`.
+There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-## Repo layout
+Verified final build: **71 tests passed**, 96 comparison outputs rendered, and all 34 full-engine source–target cases passed structural validation. The packaged offline runner produced all three supplied outputs with native dimensions and PNGs identical to the evaluation. All ten baked engine files and 41 locked dependencies matched their verification records. These checks establish execution and preservation, not a competition ranking.
 
-```
-engine/
-  resize.py        <- implement your approach here
-  main.py           <- orchestrator (input -> resize() -> output). Don't need to edit this.
-renderer/           <- the real renderer (transformer-convertor + cr-renderer), already vendored
-brand_kit/
-  assets/           <- image files referenced by asset_id in the sample designs
-  fonts/            <- font files matching the schema's font_family values
-input/               <- drop task JSON files here for local testing (3 samples included)
-output/              <- results land here
-chameleon_design_schema_v0.9.json   <- full field-by-field spec for the design format
-Dockerfile
-RULES.md
-```
+Local evidence: [current public outputs](.project-evaluation/production-only-public/index.html), [current challenge outputs](.project-evaluation/production-only-challenges/index.html) and [production verification](.project-evaluation/production-v8/verification.json). The 96-render comparison above is preserved historical evidence; current evaluation commands produce only the selected engine output (14 public and 20 challenge cases). These ignored artifacts are absent from a fresh clone. Public and authored synthetic fixtures are development evidence, not an independent preference study. Dense banners still have small text, and the viewer's live Adobe Express sideload/import remains untested.
 
-## Quick start (no Docker needed for iterating on `resize()`)
+## Run the engine
+
+Use Bash on Linux or WSL with a working Docker Linux-container engine. Run these commands from this repository's root—the directory containing this README and Dockerfile. In the parent research workspace, enter it with `cd implementation`. Do not clone or reset over the existing checkout.
 
 ```bash
-pip install -r requirements.txt
-python -m engine.main
-```
-
-This processes every `*.json` file in `input/` (the 3 sample designs are
-already there — one per difficulty level) and writes an `_output.json` and
-`_output.png` for each into `output/`.
-
-The included baseline is a **uniform stretch** — deliberately the wrong
-approach (see the main brief: "a naive program stretches the picture; a
-good one moves the furniture"). It's there so the pipeline runs on day
-one. Run it once, look at `output/*_output.png`, and you'll see exactly
-why it's not good enough — that's the point. Replace the body of
-`resize()` in `engine/resize.py`, not just its constants.
-
-## What the self-check does (and doesn't do)
-
-`main.py` runs a quick structural check after every task — same element
-`id`s as the source, required fields present, nothing off-canvas. **This
-is not the official scorer.** It exists to catch obvious mistakes before
-you waste a submission on them. See `RULES.md` for what's actually
-checked and graded.
-
-A self-check warning does not fail the run — your JSON and PNG are still
-written either way. Read the warning; decide whether it's a real problem
-or, like the Level 2 sample's intentionally corner-bleeding decorative
-circle, an expected one.
-
-## The renderer
-
-`main.py` calls `renderer/converter/convert.py`'s `render_design_to_png()`
-(a vendored copy of `transformer-convertor`, wrapping `cr-renderer`) to
-produce each task's PNG — already wired in, no setup needed. It reads
-fonts/assets from `brand_kit/` and writes a real rendered preview, not a
-placeholder. If you ever see plain labeled boxes instead of real text and
-images in `output/*.png`, that means the import in `main.py` failed (e.g.
-`cr-renderer` didn't install — check `requirements.txt` installed cleanly)
-and it silently fell back to the box-and-label placeholder; don't judge
-your layout quality by that fallback.
-
-## Docker (how you'll actually be run)
-
-```bash
-docker build --platform linux/amd64 -t my-chameleon-engine .
+docker version
+docker build --platform linux/amd64 -t chameleon-engine .
+mkdir -p output
 docker run --rm --network none \
-  -v $(pwd)/input:/app/input \
-  -v $(pwd)/output:/app/output \
-  my-chameleon-engine
+  --mount "type=bind,source=$(pwd -P)/input,target=/app/input,readonly" \
+  --mount "type=bind,source=$(pwd -P)/output,target=/app/output" \
+  chameleon-engine
 ```
 
-`--network none` matches how stage-one scoring runs: everything your
-engine needs must be installed at **build** time (add it to
-`requirements.txt`), not fetched at run time. If you're using a locally
-hosted model, bake its weights into the image during the build step.
+The build fetches Python/renderer dependencies; execution has no network. No API key, hosted AI service or model weights are required. The Dockerfile pins its Python 3.11 base image by digest and bundles the supplied assets/fonts. `requirements.txt` includes `requirements.lock.txt`, which fixes 41 Python dependencies, including the renderer at commit `a17e1fb9a732959dd6c21ae168d5ee09d74bd64f`. System packages still resolve through the image's configured package repositories at build time. Host Python packages are not needed for this primary path.
 
-## See also
+Place task JSON files in `input/`. Each contains `source` (a canvas and elements) and `target_canvas` (width and height). The three supplied samples are included. For each successful task, `output/` receives `<task>_output.json` and `<task>_output.png`. The runner emits JSON-line diagnostics to stderr, continues after a failed task, and exits nonzero if any task fails or no tasks exist. Reusing the output directory replaces each task's prior output pair; use a new directory when preserving evidence.
 
-- `chameleon_design_schema_v0.9.json` — full input/output field spec
-- `RULES.md` — what's checked, what's graded, and what disqualifies a submission
-- FAQ — for anything not covered above
+The runner validates source/output contracts, rejects input mutation, and requires a real PNG. Renderer import failures propagate; there is no labeled-box fallback. The supplied advanced sample deliberately references missing `solstice_holiday_badge_2025.png` through element `holiday_watermark`; its official placeholder is expected. Do not add a replacement asset.
+
+## Test and inspect rendered comparisons
+
+The production image intentionally excludes development tests/scripts. Mount this checkout at `/app` to run the current source against the built runtime:
+
+```bash
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P),target=/app" \
+  chameleon-engine -m unittest discover -s tests
+```
+
+For a development comparison, choose a fresh run directory automatically:
+
+```bash
+chameleon_run=".project-evaluation/$(date -u +%Y%m%dT%H%M%SZ)-$$"
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P),target=/app" \
+  chameleon-engine scripts/evaluate.py --output-dir "$chameleon_run"
+```
+
+Open the run's `index.html` to inspect the selected Chameleon output at each target size. The harness saves source previews, output JSON/PNGs, metrics, failures, environment details and a frozen manifest. It refuses an existing output directory. It tests the three public designs at deduplicated target sizes; these are development fixtures, not held-out evidence. Scores are engine proxies, not Adobe scores. Compare native-size PNGs: thumbnails can disguise tiny text.
+
+The image runs baked engine code for the first command; the mounted test/evaluation commands run the current checkout. Rebuild after changes before claiming the production image is verified. Preserve the lockfile, base-image digest and resolved environment with comparisons; the production verification records the exact image and source hashes. Builds may differ as system packages resolve at build time.
+
+The additional challenge harness evaluates the same production engine on five authored design families at 20 targets. Run it with the same mounted runtime and a fresh output directory:
+
+```bash
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P),target=/app" \
+  chameleon-engine scripts/evaluate_challenges.py \
+  --output-dir ".project-evaluation/challenges-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+```
+
+Use its `--baseline-dir` to compare the selected output against a previous production-engine run with identical fixture hashes. This is a regression check, not a second executable implementation. Saved reports retain the historical `full` result key for compatibility. Earlier baseline/ablation experiments remain archived outside the active workflow.
+
+## Review in the viewer
+
+With Python 3.10+ on the local Linux host:
+
+```bash
+python3 viewer/serve.py
+```
+
+Open `http://localhost:5241/` and select original/output PNG and JSON files. The viewer compares fields and dimensions; it does not render JSON or certify pixel fidelity. [Viewer instructions](viewer/README.md) cover trusted local HTTPS, manifest-v2 sideloading, tests and the SDK action that imports one flattened PNG into Express. Local preview is separate from live Express validation and from the offline engine.
+
+## How selection works—and its limits
+
+- Source fitting preserves explicit groups and source anchors while fitting real text widths and font sizes.
+- Contained text and visible image art can inherit an ungrouped rectangular backing as an internal layout unit. Original group IDs and stacking order remain unchanged.
+- Responsive search combines sampled text/image/group states into rows, columns and split panels. Frontier pruning bounds work and can discard good layouts; it is not a global optimum or complete feasibility proof.
+- Editorial candidates connect image, headline, supporting copy and action. Repeated-card candidates preserve equal treatment and source reading order. Both abstain on unsupported structures instead of silently squeezing content into spare slots.
+- Composition ranking uses alpha-aware image prominence, source typography hierarchy, readable-copy floors, repeated-group flow and aspect-weighted source anchors. These are engineering preferences, not a learned aesthetic judge.
+- Glyph bounds and missing-glyph checks follow the converter/renderer text path. Final imagery supplies contrast and busyness proxies for a small candidate shortlist.
+- The validated source-fit incumbent always reaches pixel reranking. Contrast, tiny text and ink failures appear in quality warnings; warnings are not an official pass/fail threshold.
+- Independent validation enforces conservation and the declared strict-bounds/style policy. Official requirements and conservative policy are distinct; the supplied [rules](RULES.md), [FAQ](FAQ.md) and [schema](chameleon_design_schema_v0.9.json) remain references, not an official scoring implementation.
+
+Dense banners can still have tiny type, weak hierarchy, overlap or subject occlusion. A structurally valid result and a successful render do not establish legibility. The selected result includes no private diagnostics; inspect stderr/evaluation reports for quality warnings. No image regeneration, text rewriting, learned role classifier or visual-language model is implemented.
+
+Keep the project repository private. Final hardware/model limits, exact deadline cutoff, intentional-bleed interpretation and the stage-one viewer requirement remain unresolved in the captured organizer material. This code has not been submitted or certified by Adobe.

@@ -1,0 +1,91 @@
+{
+  "task_id": "synthetic_asymmetric-space",
+  "notes": "Agent-authored synthetic development challenge; not independent human-quality holdout. Sparse asymmetric composition: upper-left voice and bottom-right product balanced by deliberate empty upper-right region; whitespace is meaningful.",
+  "source": {
+    "canvas": {
+      "width": 1200,
+      "height": 800
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "x": 0,
+        "y": 0,
+        "width": 1200,
+        "height": 800,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(247,242,227,1)",
+        "z_index": 0
+      },
+      {
+        "id": "accent",
+        "type": "shape",
+        "x": 74,
+        "y": 90,
+        "width": 8,
+        "height": 72,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(234,104,49,1)",
+        "z_index": 0
+      },
+      {
+        "id": "issue",
+        "type": "text",
+        "x": 105,
+        "y": 105,
+        "width": 400,
+        "height": 48,
+        "content": "A SMALL MOMENT",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "headline",
+        "type": "text",
+        "x": 74,
+        "y": 250,
+        "width": 690,
+        "height": 220,
+        "content": "Less noise.\nMore daylight.",
+        "font_family": "Solstice Serif",
+        "font_size": 80,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "caption",
+        "type": "text",
+        "x": 78,
+        "y": 660,
+        "width": 570,
+        "height": 52,
+        "content": "Take your time. The afternoon is yours.",
+        "font_family": "Solstice Sans",
+        "font_size": 23,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "product",
+        "type": "image",
+        "x": 875,
+        "y": 420,
+        "width": 235,
+        "height": 290,
+        "asset_id": "solstice_bottle.png",
+        "fit": "contain",
+        "z_index": 1
+      }
+    ]
+  },
+  "target_canvas": {
+    "width": 600,
+    "height": 900
+  }
+}

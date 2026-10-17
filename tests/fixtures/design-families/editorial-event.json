@@ -1,0 +1,161 @@
+{
+  "task_id": "synthetic_editorial-event",
+  "notes": "Agent-authored synthetic development challenge; not independent human-quality holdout. Editorial event: left-aligned oversized title; paired time/location; dark program panel; isolated reservation action.",
+  "source": {
+    "canvas": {
+      "width": 900,
+      "height": 1200
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "x": 0,
+        "y": 0,
+        "width": 900,
+        "height": 1200,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(247,242,227,1)",
+        "z_index": 0
+      },
+      {
+        "id": "rule",
+        "type": "shape",
+        "x": 64,
+        "y": 158,
+        "width": 772,
+        "height": 3,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(35,37,43,1)",
+        "z_index": 0
+      },
+      {
+        "id": "eyebrow",
+        "type": "text",
+        "x": 64,
+        "y": 72,
+        "width": 770,
+        "height": 54,
+        "content": "FIELD NOTES / VOL. 04",
+        "font_family": "Solstice Sans",
+        "font_size": 25,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "headline",
+        "type": "text",
+        "x": 64,
+        "y": 205,
+        "width": 770,
+        "height": 230,
+        "content": "An evening\nin the garden",
+        "font_family": "Solstice Serif",
+        "font_size": 74,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "date",
+        "type": "text",
+        "x": 66,
+        "y": 480,
+        "width": 350,
+        "height": 90,
+        "content": "FRIDAY 18 JUNE\n18:00 - 21:00",
+        "font_family": "Solstice Sans",
+        "font_size": 27,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "location",
+        "type": "text",
+        "x": 475,
+        "y": 480,
+        "width": 355,
+        "height": 90,
+        "content": "THE GLASSHOUSE\nWest entrance",
+        "font_family": "Solstice Sans",
+        "font_size": 27,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      },
+      {
+        "id": "panel",
+        "type": "shape",
+        "x": 64,
+        "y": 635,
+        "width": 772,
+        "height": 230,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 0
+      },
+      {
+        "id": "program",
+        "type": "text",
+        "x": 94,
+        "y": 668,
+        "width": 712,
+        "height": 160,
+        "content": "Botanical tastings. Quiet conversations.\nA seasonal menu shared at one long table.",
+        "font_family": "Solstice Serif",
+        "font_size": 30,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2
+      },
+      {
+        "id": "action-plate",
+        "type": "shape",
+        "x": 64,
+        "y": 958,
+        "width": 300,
+        "height": 64,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(234,104,49,1)",
+        "z_index": 0,
+        "group_id": "action"
+      },
+      {
+        "id": "action-label",
+        "type": "text",
+        "x": 76,
+        "y": 974,
+        "width": 276,
+        "height": 34,
+        "content": "Reserve your place",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2,
+        "group_id": "action",
+        "text_align": "center"
+      },
+      {
+        "id": "footer",
+        "type": "text",
+        "x": 64,
+        "y": 1100,
+        "width": 772,
+        "height": 45,
+        "content": "Limited seats / All guests welcome",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "font_weight": "regular",
+        "color": "rgba(35,37,43,1)",
+        "z_index": 2
+      }
+    ]
+  },
+  "target_canvas": {
+    "width": 1200,
+    "height": 628
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "task_id": "synthetic_transparent-hero",
+  "notes": "Agent-authored synthetic development challenge; not independent human-quality holdout. Transparent product overlaps intentional light halo; left copy/action and right hero form two balanced panels. Halo must stay behind product; do not score its overlap as a collision.",
+  "source": {
+    "canvas": {
+      "width": 1200,
+      "height": 900
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "x": 0,
+        "y": 0,
+        "width": 1200,
+        "height": 900,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 0
+      },
+      {
+        "id": "halo",
+        "type": "shape",
+        "x": 680,
+        "y": 120,
+        "width": 420,
+        "height": 620,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(247,242,227,1)",
+        "z_index": 0,
+        "corner_radius": 180
+      },
+      {
+        "id": "eyebrow",
+        "type": "text",
+        "x": 66,
+        "y": 92,
+        "width": 520,
+        "height": 50,
+        "content": "BOTANICAL / SPARKLING",
+        "font_family": "Solstice Sans",
+        "font_size": 24,
+        "font_weight": "regular",
+        "color": "rgba(247,242,227,1)",
+        "z_index": 2
+      },
+      {
+        "id": "headline",
+        "type": "text",
+        "x": 66,
+        "y": 225,
+        "width": 560,
+        "height": 205,
+        "content": "Meet your\ngolden hour.",
+        "font_family": "Solstice Serif",
+        "font_size": 68,
+        "font_weight": "regular",
+        "color": "rgba(247,242,227,1)",
+        "z_index": 2
+      },
+      {
+        "id": "body",
+        "type": "text",
+        "x": 70,
+        "y": 478,
+        "width": 500,
+        "height": 120,
+        "content": "Bright citrus and wild herbs,\nmade for slower afternoons.",
+        "font_family": "Solstice Sans",
+        "font_size": 28,
+        "font_weight": "regular",
+        "color": "rgba(247,242,227,1)",
+        "z_index": 2
+      },
+      {
+        "id": "hero",
+        "type": "image",
+        "x": 720,
+        "y": 168,
+        "width": 340,
+        "height": 520,
+        "asset_id": "solstice_bottle.png",
+        "fit": "contain",
+        "z_index": 1
+      },
+      {
+        "id": "action-plate",
+        "type": "shape",
+        "x": 70,
+        "y": 692,
+        "width": 330,
+        "height": 64,
+        "shape_type": "rectangle",
+        "fill_color": "rgba(234,104,49,1)",
+        "z_index": 0,
+        "group_id": "action"
+      },
+      {
+        "id": "action-label",
+        "type": "text",
+        "x": 82,
+        "y": 708,
+        "width": 306,
+        "height": 34,
+        "content": "Discover the blend",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "font_weight": "regular",
+        "color": "rgba(255,255,255,1)",
+        "z_index": 2,
+        "group_id": "action",
+        "text_align": "center"
+      },
+      {
+        "id": "footnote",
+        "type": "text",
+        "x": 720,
+        "y": 782,
+        "width": 340,
+        "height": 50,
+        "content": "CHILL. POUR. ENJOY.",
+        "font_family": "Solstice Sans",
+        "font_size": 20,
+        "font_weight": "regular",
+        "color": "rgba(247,242,227,1)",
+        "z_index": 2,
+        "text_align": "center"
+      }
+    ]
+  },
+  "target_canvas": {
+    "width": 900,
+    "height": 1200
+  }
+}
