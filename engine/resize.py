@@ -348,6 +348,26 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
         score = proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
         ranked.append((score,method,design,dict(quality,raster=raster,selection_score=score)))
     best = max(ranked,key=lambda c:c[0])
+    # Repair a demonstrated layout weakness, not an already-readable source
+    # relationship. Keep the fully raster-ranked incumbent in competition so
+    # a new proposal cannot evict it merely by entering the proxy shortlist.
+    q = best[3]
+    needs_repair = ((q['minimum_font_size'] is not None and q['minimum_font_size']<12)
+                    or q['text_overflow_px']>.75 or q['canvas_ink_overflow_px']>.01
+                    or q['collision_proxy']>.05)
+    if needs_repair:
+        from engine.flow import flow_candidates
+        repairs = list(flow_candidates(source,target_canvas,units,backgrounds,measurer) or [])
+        candidates.extend(repairs)
+        for method,design in repairs:
+            if validate_output(source,target_canvas,design):
+                continue
+            proxy,quality = evaluate_candidate(source,design,backgrounds,measurer,assets_dir)
+            valid.append((proxy,method,design,quality))
+            raster = raster_diagnostics(design,fonts_dir,assets_dir)
+            score = proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+            if score > best[0]:
+                best = (score,method,design,dict(quality,raster=raster,selection_score=score))
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
         approximate_frontier=True,quality_warning=best[3]['text_overflow_px']>.75 or best[3]['canvas_ink_overflow_px']>.01 or bool(best[3]['missing_glyphs']) or
         best[3]['raster']['low_contrast_proxy']>.05 or
