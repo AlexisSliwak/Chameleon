@@ -356,14 +356,22 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
                     or q['text_overflow_px']>.75 or q['canvas_ink_overflow_px']>.01
                     or q['collision_proxy']>.05)
     if needs_repair:
-        from engine.flow import flow_candidates
-        repairs = list(flow_candidates(source,target_canvas,units,backgrounds,measurer) or [])
+        from engine.flow import flow_candidates, image_floors, retains_images
+        # Freeze asset floors against the pre-repair incumbent. Do not ratchet
+        # them against whichever proposal happened to be visited last.
+        floors = image_floors(best[2],assets_dir)
+        repairs = list(flow_candidates(source,target_canvas,units,backgrounds,measurer,
+                                       floors,assets_dir) or [])
         candidates.extend(repairs)
         for method,design in repairs:
-            if validate_output(source,target_canvas,design):
+            if validate_output(source,target_canvas,design) or not retains_images(design,floors,assets_dir):
                 continue
             proxy,quality = evaluate_candidate(source,design,backgrounds,measurer,assets_dir)
             valid.append((proxy,method,design,quality))
+            # Restoring full image bounds can move optical support into a
+            # neighbor. Do not trade a new collision for a better scalar score.
+            if quality['collision_proxy'] > max(.01,q['collision_proxy']):
+                continue
             raster = raster_diagnostics(design,fonts_dir,assets_dir)
             score = proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
             if score > best[0]:

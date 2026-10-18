@@ -2,7 +2,7 @@ import copy
 import itertools
 import unittest
 
-from engine.flow import pack_lines, flow_candidates
+from engine.flow import pack_lines, flow_candidates, image_floors, retains_images
 from engine.frontier import State
 from engine.measure import TextMeasurer
 from engine.resize import background_indices, make_units, assess
@@ -152,3 +152,93 @@ class MeasuredFlowTests(unittest.TestCase):
         headline=next(e for e in design['elements'] if e['id']==original['id'])
         self.assertGreater(headline['width'],4*headline['height'])
         self.assertGreaterEqual(metrics['minimum_font_size'],12)
+
+
+class AssetRetentionTests(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        from PIL import Image, ImageDraw
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.assets=Path(self.temp.name)
+        image=Image.new('RGBA',(100,100))
+        ImageDraw.Draw(image).rectangle((25,0,74,99),fill='orange')
+        image.save(self.assets/'mark.png')
+        Image.new('RGBA',(100,100)).save(self.assets/'empty.png')
+        self.design=dict(canvas=dict(width=400,height=400),elements=[
+            dict(id='small',type='image',asset_id='mark.png',x=0,y=0,width=20,height=20),
+            dict(id='large',type='image',asset_id='mark.png',x=100,y=100,width=100,height=100)])
+
+    def test_small_foreground_cannot_be_compensated_by_large_image(self):
+        before=copy.deepcopy(self.design)
+        floors=image_floors(self.design,self.assets)
+        self.assertAlmostEqual(10,floors['small'],delta=1)
+        bad=copy.deepcopy(self.design)
+        bad['elements'][0].update(width=8,height=8)
+        bad['elements'][1].update(width=200,height=200)
+        self.assertFalse(retains_images(bad,floors,self.assets))
+        self.assertTrue(retains_images(self.design,floors,self.assets))
+        self.assertEqual(before,self.design)
+
+    def test_missing_transparent_invisible_and_backdrop_are_not_foreground(self):
+        for changes in (dict(asset_id='missing.png'),dict(asset_id='empty.png'),
+                        dict(opacity=0),dict(x=0,y=0,width=400,height=400,fit='cover')):
+            with self.subTest(changes=changes):
+                design=copy.deepcopy(self.design)
+                design['elements']=[dict(design['elements'][0],**changes)]
+                self.assertEqual({},image_floors(design,self.assets))
+        design=copy.deepcopy(self.design)
+        design['elements']=[dict(design['elements'][0],x=0,y=0,width=400,height=400,fit='contain')]
+        self.assertIn('small',image_floors(design,self.assets))
+
+    def test_custom_asset_allocation_preserves_pixels_and_literal_fields(self):
+        source=MeasuredFlowTests().source()
+        source['elements'].append(dict(self.design['elements'][0],x=50,y=50))
+        original=copy.deepcopy(source)
+        target=dict(width=240,height=600)
+        floors={'small':16.}
+        candidates=list(flow_candidates(source,target,make_units(source,[],self.assets),[],
+                                        TextMeasurer(),floors,self.assets))
+        self.assertTrue(candidates)
+        for _,design in candidates:
+            self.assertTrue(retains_images(design,floors,self.assets))
+            self.assertEqual([],validate_output(source,target,design))
+        self.assertEqual(original,source)
+
+    def test_unachievable_asset_floor_abstains_without_deleting_asset(self):
+        source=MeasuredFlowTests().source()
+        source['elements'].append(dict(self.design['elements'][0],x=50,y=50))
+        self.assertEqual([],list(flow_candidates(source,dict(width=80,height=100),
+            make_units(source,[],self.assets),[],TextMeasurer(),{'small':300},self.assets)))
+
+    def test_extreme_banners_retain_brand_without_sacrificing_copy(self):
+        import json
+        from pathlib import Path
+        from engine.resize import resize_with_diagnostics
+        root=Path(__file__).resolve().parents[1]
+        for family,minimum in [('dense-launch',6),('layered-contrast',7)]:
+            with self.subTest(family=family):
+                source=json.loads((root/'tests/fixtures/hard-challenges'/(family+'.json')).read_text())['source']
+                before=copy.deepcopy(source);target=dict(width=728,height=90)
+                design,metrics=resize_with_diagnostics(source,target)
+                self.assertEqual([],validate_output(source,target,design))
+                self.assertGreaterEqual(metrics['minimum_font_size'],minimum)
+                self.assertLessEqual(metrics['collision_proxy'],.01)
+                marks=[e for e in design['elements'] if e['type']=='image' and 'logo' in e['asset_id']]
+                self.assertTrue(marks)
+                footprints=image_floors(design)
+                for e in marks:self.assertGreaterEqual(footprints[e['id']],13)
+                self.assertEqual(before,source)
+
+    def test_asset_names_and_ids_do_not_determine_allocation(self):
+        source=MeasuredFlowTests().source()
+        source['elements'].append(dict(self.design['elements'][0],x=50,y=50))
+        renamed=copy.deepcopy(source)
+        for i,e in enumerate(renamed['elements']):e['id']='anonymous-'+str(i)
+        target=dict(width=240,height=600);m=TextMeasurer()
+        a=list(flow_candidates(source,target,make_units(source,[],self.assets),[],m,{'small':16},self.assets))
+        b=list(flow_candidates(renamed,target,make_units(renamed,[],self.assets),[],m,{'anonymous-3':16},self.assets))
+        fields=('x','y','width','height','font_size')
+        self.assertTrue(a)
+        self.assertEqual([[[e.get(k) for k in fields] for e in d['elements']] for _,d in a],
+                         [[[e.get(k) for k in fields] for e in d['elements']] for _,d in b])

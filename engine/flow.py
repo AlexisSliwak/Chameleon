@@ -8,6 +8,31 @@ interpretation of an arbitrary source or an exact continuous optimizer.
 from math import sqrt
 
 from engine.frontier import State, normalize_leaf, prune_states
+from engine.composition import visible_image, DEFAULT_ASSETS
+
+
+def image_floors(design, assets_dir=None):
+    """Incumbent-relative optical floors, not logo recognition or official rules.
+
+    Protect each foreground asset independently. Large artwork is not forced
+    to retain its full size; already-small art must not shrink further. Missing,
+    invisible and full-bleed backdrop assets supply no visibility evidence.
+    """
+    W,H = design['canvas']['width'],design['canvas']['height']
+    floors = {}
+    for e in design['elements']:
+        if e['type']!='image':continue
+        if (e.get('fit')=='cover' and e.get('group_id') is None and
+            e['x']<=0 and e['y']<=0 and e['x']+e['width']>=W and e['y']+e['height']>=H):continue
+        box,area = visible_image(e,assets_dir or DEFAULT_ASSETS)
+        if area>0:
+            floors[e['id']] = min(16.,min(box[2]-box[0],box[3]-box[1]))
+    return floors
+
+
+def retains_images(design, floors, assets_dir=None):
+    measured = image_floors(design,assets_dir)
+    return all(measured.get(eid,0)+.25>=floor for eid,floor in floors.items())
 
 
 def pack_lines(options, width, height, gap, max_row=6):
@@ -66,7 +91,8 @@ def pack_lines(options, width, height, gap, max_row=6):
     return result
 
 
-def _choices(source, unit, width, height, floor, base, scale, art_scale, measurer):
+def _choices(source, unit, width, height, floor, base, scale, art_scale, measurer,
+             image_minima=None, assets_dir=None):
     elements = source['elements']
     texts = [i for i in unit.indices if elements[i]['type']=='text']
     shapes = [i for i in unit.indices if elements[i]['type']=='shape']
@@ -138,6 +164,13 @@ def _choices(source, unit, width, height, floor, base, scale, art_scale, measure
     l,t,r,b = unit.bounds
     uw,uh = max(.001,r-l),max(.001,b-t)
     required = max((floor*(elements[i]['font_size']/base)**.6/elements[i]['font_size'] for i in texts),default=0)
+    for i in unit.indices:
+        old=elements[i]
+        minimum=(image_minima or {}).get(old['id'],0)
+        if minimum:
+            box,area=visible_image(old,assets_dir or DEFAULT_ASSETS)
+            if area>0:
+                required=max(required,minimum/max(.001,min(box[2]-box[0],box[3]-box[1])))
     desired = max(required,scale*art_scale)
     s = min(width/uw,height/uh,desired)
     if s+1e-6 < required:
@@ -151,10 +184,31 @@ def _choices(source, unit, width, height, floor, base, scale, art_scale, measure
             if not extent.fits(e['width'],e['height']) or extent.missing_glyphs or e['font_size']+.01<floor:
                 return []
         edits[i] = e
+    if len(edits)==1 and elements[unit.indices[0]]['type']=='image' and not elements[unit.indices[0]].get('rotation'):
+        i=unit.indices[0]
+        minimum=(image_minima or {}).get(elements[i]['id'],0)
+        # Small raster masks quantize alpha support; scaling source bounds
+        # alone can undershoot the intended footprint by a pixel or more.
+        for attempt in range(4):
+            box,area=visible_image(edits[i],assets_dir or DEFAULT_ASSETS)
+            short=min(box[2]-box[0],box[3]-box[1])
+            if not area or short+.25>=minimum:break
+            grow=min((minimum+.25)/max(.001,short),width/edits[i]['width'],height/edits[i]['height'])
+            if grow<=1:break
+            edits[i]=dict(edits[i],width=edits[i]['width']*grow,height=edits[i]['height']*grow)
+        box,area=visible_image(edits[i],assets_dir or DEFAULT_ASSETS)
+        if minimum and (not area or min(box[2]-box[0],box[3]-box[1])+.25<minimum):return []
+        if area>0:
+            # Transparent padding may share space with neighboring content.
+            # Keep the unchanged full asset box and its aspect ratio; only the
+            # visible support participates in packing. Canvas bounds are
+            # restored after packing, then independent checks assess the move.
+            e=dict(edits[i],x=edits[i]['x']-box[0],y=edits[i]['y']-box[1])
+            return [State(box[2]-box[0],box[3]-box[1],0,{i:e})]
     return [normalize_leaf(edits)]
 
 
-def flow_candidates(source,target,units,backgrounds,measurer):
+def flow_candidates(source,target,units,backgrounds,measurer,image_minima=None,assets_dir=None):
     from engine.resize import materialize
     W,H = target['width'],target['height']
     text = [e for e in source['elements'] if e['type']=='text' and e['content'].strip()]
@@ -173,11 +227,16 @@ def flow_candidates(source,target,units,backgrounds,measurer):
         return
     for art_scale in (.5,.85):
         for floor in (24,20,16,14,12,10,8,7,6,5,4):
-            options = [_choices(source,u,width,height,floor,base,scale,art_scale,measurer) for u in units]
+            options = [_choices(source,u,width,height,floor,base,scale,art_scale,measurer,
+                                image_minima,assets_dir) for u in units]
             placed = pack_lines(options,width,height,margin)
             if placed is None:
                 continue
             placed = {i:dict(e,x=e['x']+margin,y=e['y']+margin) for i,e in placed.items()}
+            for i,e in placed.items():
+                if e['type']=='image' and not e.get('rotation'):
+                    e['x']=max(0.,min(e['x'],W-e['width']))
+                    e['y']=max(0.,min(e['y'],H-e['height']))
             yield 'ordered-flow',materialize(source,target,placed,backgrounds)
             # Keep the first feasible sampled tier for each art allocation.
             # Other candidate families still supply hierarchy/spacing tradeoffs.
