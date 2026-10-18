@@ -1,0 +1,237 @@
+{
+  "task_id": "hard-typography-pressure",
+  "source": {
+    "canvas": {
+      "width": 1400,
+      "height": 1700
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 0,
+        "y": 0,
+        "width": 1400,
+        "height": 1700,
+        "fill_color": "rgba(247,242,227,1)",
+        "z_index": 1
+      },
+      {
+        "id": "headline",
+        "type": "text",
+        "content": "The details are part of the design.",
+        "x": 90,
+        "y": 80,
+        "width": 1220,
+        "height": 120,
+        "font_family": "Solstice Serif",
+        "font_size": 62,
+        "color": "rgba(35,37,43,1)",
+        "z_index": 5,
+        "font_weight": "bold"
+      },
+      {
+        "id": "eyebrow",
+        "type": "text",
+        "content": "ÉDITION LIMITÉE / CRÈME & CITRUS / 2026",
+        "x": 90,
+        "y": 230,
+        "width": 1220,
+        "height": 65,
+        "font_family": "Solstice Sans",
+        "font_size": 27,
+        "color": "rgba(35,37,43,1)",
+        "z_index": 5,
+        "letter_spacing": 1.3
+      },
+      {
+        "id": "styled-support",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 75,
+        "y": 340,
+        "width": 1250,
+        "height": 195,
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 1
+      },
+      {
+        "id": "styled",
+        "type": "text",
+        "content": "One unmistakable collection, with every original word preserved.",
+        "x": 110,
+        "y": 370,
+        "width": 1180,
+        "height": 140,
+        "font_family": "Solstice Sans",
+        "font_size": 37,
+        "color": "rgba(247,242,227,1)",
+        "z_index": 5,
+        "line_height": 1.25,
+        "style_runs": [
+          {
+            "start": 4,
+            "end": 16,
+            "color": "rgba(232,106,58,1)",
+            "font_weight": "bold"
+          },
+          {
+            "start": 18,
+            "end": 29,
+            "font_style": "italic"
+          }
+        ]
+      },
+      {
+        "id": "newlines-support",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 75,
+        "y": 560,
+        "width": 1250,
+        "height": 195,
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 1
+      },
+      {
+        "id": "newlines",
+        "type": "text",
+        "content": "FRIDAY 18:30\nSATURDAY 14:00 / 18:30\nSUNDAY 12:00",
+        "x": 110,
+        "y": 590,
+        "width": 1180,
+        "height": 140,
+        "font_family": "Solstice Sans",
+        "font_size": 27,
+        "color": "rgba(247,242,227,1)",
+        "z_index": 5,
+        "line_height": 1.25
+      },
+      {
+        "id": "token-support",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 75,
+        "y": 780,
+        "width": 1250,
+        "height": 195,
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 1
+      },
+      {
+        "id": "token",
+        "type": "text",
+        "content": "RESERVATION-CODE-SOLSTICE2026BOTANICALCOLLECTIONGOLDENHOUR",
+        "x": 110,
+        "y": 810,
+        "width": 1180,
+        "height": 140,
+        "font_family": "Solstice Sans",
+        "font_size": 23,
+        "color": "rgba(247,242,227,1)",
+        "z_index": 5,
+        "line_height": 1.25
+      },
+      {
+        "id": "url-support",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 75,
+        "y": 1000,
+        "width": 1250,
+        "height": 195,
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 1
+      },
+      {
+        "id": "url",
+        "type": "text",
+        "content": "solstice.com/events/limited-collection/registration-and-accessibility",
+        "x": 110,
+        "y": 1030,
+        "width": 1180,
+        "height": 140,
+        "font_family": "Solstice Sans",
+        "font_size": 23,
+        "color": "rgba(247,242,227,1)",
+        "z_index": 5,
+        "line_height": 1.25,
+        "letter_spacing": 1.1
+      },
+      {
+        "id": "paragraph-support",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 75,
+        "y": 1220,
+        "width": 1250,
+        "height": 195,
+        "fill_color": "rgba(42,75,64,1)",
+        "z_index": 1
+      },
+      {
+        "id": "paragraph",
+        "type": "text",
+        "content": "Bring a friend, reserve a table, and allow time to explore. Accessible seating, quiet spaces and non-alcoholic pairings are available throughout the event.",
+        "x": 110,
+        "y": 1250,
+        "width": 1180,
+        "height": 140,
+        "font_family": "Solstice Sans",
+        "font_size": 25,
+        "color": "rgba(247,242,227,1)",
+        "z_index": 5,
+        "line_height": 1.25
+      },
+      {
+        "id": "action-plate",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 390,
+        "y": 1485,
+        "width": 620,
+        "height": 80,
+        "fill_color": "rgba(232,106,58,1)",
+        "z_index": 1,
+        "group_id": "action",
+        "rotation": 0
+      },
+      {
+        "id": "action-label",
+        "type": "text",
+        "content": "Reserve your place",
+        "x": 402,
+        "y": 1499,
+        "width": 596,
+        "height": 60,
+        "font_family": "Solstice Sans",
+        "font_size": 20,
+        "color": "rgba(255,255,255,1)",
+        "z_index": 5,
+        "group_id": "action",
+        "rotation": 0,
+        "text_align": "center",
+        "font_weight": "bold"
+      },
+      {
+        "id": "legal",
+        "type": "text",
+        "content": "No shortened links, ellipses, rewritten copy or substituted font families.",
+        "x": 90,
+        "y": 1595,
+        "width": 1220,
+        "height": 55,
+        "font_family": "Solstice Sans",
+        "font_size": 20,
+        "color": "rgba(35,37,43,1)",
+        "z_index": 5
+      }
+    ]
+  },
+  "target_canvas": {
+    "width": 600,
+    "height": 900
+  },
+  "notes": "Authored advanced-development stress case, not an official hidden test."
+}

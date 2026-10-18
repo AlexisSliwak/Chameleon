@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "provenance": "Six agent-authored development families plus the unchanged official advanced sample. Not official hidden tests or independent quality holdouts.",
+  "difficulty_basis": "Challenge brief section 2.4: arbitrary text/image counts, deliberately awkward content and extreme target shapes. Very small targets probe capacity limits; readability is not guaranteed feasible.",
+  "families": [
+    {
+      "file": "official-advanced.json",
+      "name": "Official level 3 reference",
+      "tags": [
+        "official-reference",
+        "long-copy",
+        "rotation",
+        "expected-missing-asset"
+      ],
+      "review": [
+        "The known missing badge remains a placeholder rather than a crash.",
+        "All original copy and badges remain; assess actual banner readability."
+      ],
+      "expected_missing_assets": [
+        "solstice_holiday_badge_2025.png"
+      ],
+      "targets": [
+        {
+          "name": "official-target",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "portrait-control",
+          "canvas": {
+            "width": 1080,
+            "height": 1350
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "compact",
+          "canvas": {
+            "width": 300,
+            "height": 250
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "unusual-tall",
+          "canvas": {
+            "width": 113,
+            "height": 997
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "dense-launch.json",
+      "name": "Dense launch / six badges",
+      "tags": [
+        "long-copy",
+        "many-badges",
+        "rotation",
+        "multiple-disclaimers"
+      ],
+      "review": [
+        "All six badges remain distinct and readable.",
+        "The product and brand remain recognizable.",
+        "The three disclaimers remain separate; the action follows the message."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1600,
+            "height": 1800
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 600,
+            "height": 900
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 160,
+            "height": 600
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "six-card-catalogue.json",
+      "name": "Six-product catalogue",
+      "tags": [
+        "36-elements",
+        "compound-groups",
+        "repeated-series",
+        "image-alpha"
+      ],
+      "review": [
+        "Names, descriptions and prices stay with the correct product.",
+        "Read cards in source order, then the action and legal copy.",
+        "Equal products receive equal prominence; no card collapses to a thumbnail."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1800,
+            "height": 1600
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 600,
+            "height": 1200
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 1600,
+            "height": 400
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "typography-pressure.json",
+      "name": "Typography / tokens and styled runs",
+      "tags": [
+        "long-token",
+        "explicit-newlines",
+        "style-runs",
+        "accented-latin",
+        "contrast-panels"
+      ],
+      "review": [
+        "Complete tokens and URLs survive without clipping.",
+        "Colour and italic spans remain on the same characters.",
+        "White copy retains its green backing; line spacing remains legible."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1400,
+            "height": 1700
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 600,
+            "height": 900
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 320,
+            "height": 100
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 113,
+            "height": 997
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "rotated-programme.json",
+      "name": "Rotated programme / compound schedule",
+      "tags": [
+        "rotated-images",
+        "rotated-groups",
+        "compound-schedule",
+        "multiple-actions"
+      ],
+      "review": [
+        "Rotated image corners remain inside the canvas.",
+        "Each ticket stays with its plate; all six schedule rows stay together.",
+        "Both actions remain clear and separate from the schedule."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1600,
+            "height": 1500
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 600,
+            "height": 900
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 1600,
+            "height": 400
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 160,
+            "height": 600
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "layered-contrast.json",
+      "name": "Layered contrast / two brand anchors",
+      "tags": [
+        "alpha-padding",
+        "semi-transparent-backings",
+        "cover-background",
+        "multiple-brand-marks"
+      ],
+      "review": [
+        "Text stays on a sufficiently contrasting backing.",
+        "The halo remains attached to the product.",
+        "Both brand marks survive without dominating the message."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1600,
+            "height": 1200
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 900,
+            "height": 1200
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 300,
+            "height": 250
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "independent-disclaimers.json",
+      "name": "Two collections / three independent disclaimers",
+      "tags": [
+        "empty-string-group",
+        "multiple-disclaimers",
+        "mixed-image-box-ratios",
+        "long-copy"
+      ],
+      "review": [
+        "Each disclaimer remains distinct and fully retained.",
+        "Product names and descriptions stay attached to their own artwork.",
+        "The empty-string group is a real group, not an ungrouped element."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity-control",
+          "canvas": {
+            "width": 1600,
+            "height": 1800
+          },
+          "pressure": "control"
+        },
+        {
+          "name": "stress-1",
+          "canvas": {
+            "width": 600,
+            "height": 900
+          },
+          "pressure": "hard"
+        },
+        {
+          "name": "stress-2",
+          "canvas": {
+            "width": 970,
+            "height": 90
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "stress-3",
+          "canvas": {
+            "width": 113,
+            "height": 997
+          },
+          "pressure": "extreme"
+        }
+      ]
+    }
+  ]
+}

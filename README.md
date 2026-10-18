@@ -64,6 +64,37 @@ docker run --rm --network none --entrypoint python \
 
 Use its `--baseline-dir` to compare the selected output against a previous production-engine run with identical fixture hashes. This is a regression check, not a second executable implementation. Saved reports retain the historical `full` result key for compatibility. Earlier baseline/ablation experiments remain archived outside the active workflow.
 
+## Review the hardest cases
+
+The [advanced review suite](tests/fixtures/hard-challenges/README.md) contains **28 cases across seven source families**: the unchanged official advanced sample and six authored stress designs. It covers 36-element catalogues, long styled copy and unbroken tokens, rotated groups, layered contrast, multiple disclaimers and extreme aspect ratios. These probe the published advanced requirements; they are not the organizer's hidden tests.
+
+After building the image above, run from this repository root. This command tests the **baked production engine**, mounting only the review harness, fixtures and evidence directory:
+
+```bash
+mkdir -p .project-evaluation
+chameleon_review=".project-evaluation/hard-review-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P)/scripts,target=/app/scripts,readonly" \
+  --mount "type=bind,source=$(pwd -P)/tests/fixtures/hard-challenges,target=/app/tests/fixtures/hard-challenges,readonly" \
+  --mount "type=bind,source=$(pwd -P)/.project-evaluation,target=/app/.project-evaluation" \
+  chameleon-engine scripts/review_hard_cases.py --output-dir "$chameleon_review"
+python3 -m http.server 5262 --bind 127.0.0.1 --directory "$chameleon_review"
+```
+
+Open `http://localhost:5262/` (stop the server with Ctrl-C). You can also open the generated `index.html` directly. Compare original and output, switch to **100%** to inspect actual size, filter warnings/failures and record a judgment for each case. Notes stay in that browser; **Export review notes** saves a portable JSON copy. Import accepts notes only for the exact same run. No notes are uploaded.
+
+Each case invokes the real CLI in an isolated process and retains its input, output JSON/PNG, logs, timing and checks. The suite independently checks element/content preservation and PNG dimensions, freezes fixtures/harness and records engine/asset/font hashes. It retains failures in the gallery and returns nonzero for execution, preservation, source-render or integrity failure. The default 120-second per-case timeout is a local harness budget, not an official limit. Font-size and contrast warnings guide manual review; they do not fail the contract or certify visual quality. A fresh output directory is required.
+
+Run the review-note logic tests with Node.js 18+:
+
+```bash
+node --test tests/review_notes.test.cjs
+```
+
+The Python suite above includes source validity, unchanged official-reference, preservation, timeout, failure-retention and gallery-escaping tests. Rebuild the image after engine changes before generating new production evidence.
+
+The initial advanced run rendered all 28 cases with zero structural/execution failures and 22 visual-warning cases. The expanded Python suite passed 81 tests; the review-note and existing viewer JavaScript suites passed 16 tests. Browser checks verified filtering, native zoom, note persistence and export/import. Extreme outputs include 1–3px text and a typography case with ink/overflow warnings: these are exposed weaknesses, not visual passes. Local artifacts: [gallery](.project-evaluation/hard-review-v1/index.html) and [inspection notes](.project-evaluation/hard-review-v1/review-report.md).
+
 ## Review in the viewer
 
 With Python 3.10+ on the local Linux host:
