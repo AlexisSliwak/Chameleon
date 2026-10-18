@@ -93,7 +93,8 @@ def _art(out,index,slot,target,assets_dir):
     e.update(x=max(0,centerx-nw*mx),y=max(0,centery-nh*my),width=nw,height=nh)
 
 
-def series_candidates(source,target,measurer,assets_dir=None):
+def _series_layout(source,target,measurer,assets_dir=None,columns=None,horizontal=None,
+                   rail_fraction=0.,art_fraction=None):
     """Yield consistent vertical-row or horizontal-column card compositions."""
     classified=_groups(source)
     if classified is None:return
@@ -121,26 +122,33 @@ def series_candidates(source,target,measurer,assets_dir=None):
     footers.sort(key=lambda i:(elements[i]['y'],elements[i]['x']))
     tall=H/W>1.3
     margin=min(W,H)*.045; gap=min(W,H)*.025; inner=W-2*margin
+    rail=inner*rail_fraction
+    header_width=rail if rail else inner
     scale=min(W/sw*1.2,sqrt(W*H/(sw*sh))*1.15)
-    header=_fit_stack(source,headers,inner,H*.24,scale,measurer,gap*.45)
+    header=_fit_stack(source,headers,header_width,H*(.5 if rail else .24),scale,measurer,gap*.45)
     if header is None:return
     footer_budget=min(H*.19,max(60,min(W,H)*.17)) if actions or footers else 0
-    ytop=margin+header[1]+gap*1.4
-    ybottom=H-margin-footer_budget-(gap if footer_budget else 0)
+    if rail:
+        footer_budget=H-2*margin-header[1]-gap*1.4
+        inner-=rail+gap
+    ytop=margin if rail else margin+header[1]+gap*1.4
+    ybottom=H-margin if rail else H-margin-footer_budget-(gap if footer_budget else 0)
     available=ybottom-ytop
     if available<=0:return
     n=len(cards);cardgap=gap
-    if tall:
-        cw=inner;ch=(available-cardgap*(n-1))/n
-    else:
-        cw=(inner-cardgap*(n-1))/n;ch=available
+    legacy=columns is None
+    columns=(1 if tall else n) if columns is None else columns
+    horizontal=tall if horizontal is None else horizontal
+    rows=(n+columns-1)//columns
+    cw=(inner-cardgap*(columns-1))/columns
+    ch=(available-cardgap*(rows-1))/rows
     if min(cw,ch)<=4:return
     pad=max(2,min(cw,ch)*.075)
-    if tall:
-        image_width=cw*.31;text_width=cw-image_width-3*pad
+    if horizontal:
+        image_width=cw*(.31 if art_fraction is None else art_fraction);text_width=cw-image_width-3*pad
         text_height=ch-2*pad
     else:
-        image_height=ch*.48;text_width=cw-2*pad
+        image_height=ch*(.48 if art_fraction is None else art_fraction);text_width=cw-2*pad
         text_height=ch-image_height-3*pad
     if min(text_width,text_height)<=1:return
     # Share a common scale across all cards so longer copy cannot accidentally
@@ -154,12 +162,12 @@ def series_candidates(source,target,measurer,assets_dir=None):
     if card_plans is None:return
     out=deepcopy(elements)
     for i in backgrounds:out[i].update(x=0.,y=0.,width=float(W),height=float(H))
-    _place_stack(out,header[0],margin,margin,inner,gap*.45)
+    _place_stack(out,header[0],margin,margin,header_width,gap*.45)
     for j,(card,plan) in enumerate(zip(cards,card_plans)):
-        x=margin if tall else margin+j*(cw+cardgap)
-        y=ytop+j*(ch+cardgap) if tall else ytop
+        x=margin+(rail+gap if rail else 0)+(j%columns)*(cw+cardgap)
+        y=ytop+(j//columns)*(ch+cardgap)
         out[card.backdrop].update(x=x,y=y,width=cw,height=ch)
-        if tall:
+        if horizontal:
             image_slot=(x+pad,y+pad,image_width,ch-2*pad)
             tx=x+image_width+2*pad;ty=y+(ch-plan[1])/2
         else:
@@ -167,22 +175,55 @@ def series_candidates(source,target,measurer,assets_dir=None):
             tx=x+pad;ty=y+image_height+2*pad
         _art(out,card.image,image_slot,target,assets_dir)
         _place_stack(out,plan[0],tx,ty,text_width,gap*.45)
-    fy=ybottom+gap
+    fy=margin+header[1]+gap*1.4 if rail else ybottom+gap
+    footer_inner=rail if rail else inner
+    footer_stacked=tall or bool(rail)
     if actions:
-        bi,ti=actions[0];bw=min(inner, W*(.70 if tall else .36));bh=min(footer_budget*.48 if tall and footers else footer_budget*.8,min(W,H)*.09)
+        bi,ti=actions[0];bw=min(footer_inner, W*(.70 if footer_stacked else .36));bh=min(footer_budget*.48 if footer_stacked and footers else footer_budget*.8,min(W,H)*.09)
         pref=max(1,elements[ti]['font_size']*min(1.25,max(scale,.85)))
         padding=max(2,bh*.18)
         trial,extent=measurer.fit(elements[ti],max(1,bw-2*padding),max(1,bh-2*padding),pref)
-        bx=margin if not tall else (W-bw)/2
+        bx=margin if rail or not tall else (W-bw)/2
         out[bi].update(x=bx,y=fy,width=bw,height=bh)
         out[ti].update(x=bx+padding,y=fy+(bh-extent.bottom)/2,width=bw-2*padding,
                        height=max(1,extent.bottom+1),font_size=trial['font_size'])
-        fx=margin if tall else margin+bw+gap;fw=inner if tall else inner-bw-gap
-        ftop=fy+bh+gap*.5 if tall else fy
+        fx=margin if footer_stacked else margin+bw+gap;fw=footer_inner if footer_stacked else footer_inner-bw-gap
+        ftop=fy+bh+gap*.5 if footer_stacked else fy
         fh=H-margin-ftop
-    else:fx,fw,ftop,fh=margin,inner,fy,H-margin-fy
+    else:fx,fw,ftop,fh=margin,footer_inner,fy,H-margin-fy
     if footers:
         footer=_fit_stack(source,footers,fw,fh,max(.7,min(1.1,scale)),measurer,gap*.35)
         if footer is None:return
         _place_stack(out,footer[0],fx,ftop,fw,gap*.35)
-    yield ('series-horizontal-cards' if tall else 'series-vertical-cards'),dict(canvas=deepcopy(target),elements=out)
+    method=('series-horizontal-cards' if tall else 'series-vertical-cards') if legacy else 'series-grid-'+str(columns)+('x-side' if horizontal else 'x-stack')
+    if rail:method+='-rail'
+    yield method,dict(canvas=deepcopy(target),elements=out)
+
+
+def series_candidates(source,target,measurer,assets_dir=None):
+    yield from _series_layout(source,target,measurer,assets_dir)
+
+
+def grid_candidates(source,target,measurer,assets_dir=None):
+    """Bounded row-major topology alternatives for an established card series.
+
+    Recognition never uses identifiers or literal copy. Preserve shared role
+    tiers and every card, including an incomplete last row. This finite search
+    is not a general layout solver or proof of infeasibility.
+    """
+    classified=_groups(source)
+    if classified is None:return
+    count=len(classified[0])
+    if count>12:return
+    tall=target['height']/target['width']>1.3
+    for columns in range(1,min(count,6)+1):
+        for horizontal in (True,False):
+            if columns==(1 if tall else count) and horizontal==tall:continue
+            yield from _series_layout(source,target,measurer,assets_dir,columns,horizontal)
+    # On shallow canvases a full-width header/footer consumes the same scarce
+    # height needed by every card. Test a separate rail, retaining all content.
+    if target['width']/target['height']>=3:
+        for columns in range(1,min(count,6)+1):
+            for horizontal in (True,False):
+                yield from _series_layout(source,target,measurer,assets_dir,columns,horizontal,
+                                          rail_fraction=.22,art_fraction=.28)

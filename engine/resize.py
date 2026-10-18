@@ -362,6 +362,8 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
         floors = image_floors(best[2],assets_dir)
         repairs = list(flow_candidates(source,target_canvas,units,backgrounds,measurer,
                                        floors,assets_dir) or [])
+        from engine.series import grid_candidates
+        repairs.extend(grid_candidates(source,target_canvas,measurer,assets_dir) or [])
         candidates.extend(repairs)
         for method,design in repairs:
             if validate_output(source,target_canvas,design) or not retains_images(design,floors,assets_dir):
