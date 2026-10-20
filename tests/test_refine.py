@@ -98,3 +98,31 @@ class TextRefinementTests(unittest.TestCase):
         full=copy.deepcopy(source)
         full['elements'][-1]['x']+=4
         self.assertIsNone(self.run_refinement(source,full))
+
+    def test_bottom_anchor_reclaims_space_above_footer(self):
+        source=copy.deepcopy(self.source)
+        source['elements']=[dict(source['elements'][0],content='Footer copy',x=20,y=300,width=350,height=80,font_size=30)]
+        design=copy.deepcopy(source)
+        design['elements'][0].update(y=380,height=15,font_size=6)
+        before=copy.deepcopy(design)
+        result=self.run_refinement(source,design)
+        self.assertIsNotNone(result)
+        e=result['elements'][0]
+        self.assertGreater(e['font_size'],6)
+        self.assertLess(e['y'],380)
+        self.assertAlmostEqual(e['y']+e['height'],395)
+        self.assertEqual(before,design)
+        self.assertEqual([],validate_output(source,design['canvas'],result))
+
+    def test_bottom_growth_does_not_cross_overlapping_neighbor(self):
+        source=copy.deepcopy(self.source)
+        source['elements'][0].update(y=380,height=15,font_size=30,content='Footer copy')
+        source['elements'][1].update(y=330,height=40,font_size=18,content='Keep this row above')
+        design=copy.deepcopy(source);design['elements'][0]['font_size']=6
+        before=assess(source,design,[],self.measurer)
+        result=self.run_refinement(source,design)
+        self.assertIsNotNone(result)
+        self.assertGreaterEqual(result['elements'][0]['y'],370)
+        after=assess(source,result,[],self.measurer)
+        self.assertLessEqual(after['collision_proxy'],before['collision_proxy']+1e-6)
+        self.assertEqual(design['elements'][1],result['elements'][1])

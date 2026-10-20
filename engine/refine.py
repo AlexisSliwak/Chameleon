@@ -52,11 +52,24 @@ def refine_text(source, design, units, backgrounds, measurer, assets_dir=None):
         heights=sorted(h for h in heights if old['height']<=h<=H-old['y'])[:3]
         selected=None
         for width in widths:
-            for height in heights:
+            x=anchor-width/2 if align=='center' else anchor-width if align=='right' else anchor
+            # A bottom anchor recovers space above footers without moving the
+            # lower edge. Bound it by every overlapping neighbor, using the
+            # proposed width so widening cannot jump across another column.
+            bottom=old['y']+old['height']
+            top=0.
+            for j,e in enumerate(current['elements']):
+                if j==i or j in backgrounds:continue
+                if x<e['x']+e['width'] and e['x']<x+width and e['y']<bottom:
+                    top=max(top,e['y']+e['height']+2)
+            options=[(height,False) for height in heights]
+            if bottom-top>old['height']:
+                options.append((bottom-top,True))
+            for height,from_bottom in options:
                 trial,extent=measurer.fit(old,width,height,max(old['font_size'],source['elements'][i]['font_size']*scale))
                 if trial['font_size']<=old['font_size'] or not extent.fits(width,height) or extent.missing_glyphs:continue
-                x=anchor-width/2 if align=='center' else anchor-width if align=='right' else anchor
-                trial.update(x=x,y=old['y'],width=width,height=max(1.,extent.bottom+1))
+                ink_height=max(1.,extent.bottom+1)
+                trial.update(x=x,y=bottom-ink_height if from_bottom else old['y'],width=width,height=ink_height)
                 proposal=dict(current,elements=list(current['elements']))
                 proposal['elements'][i]=trial
                 if validate_output(source,design['canvas'],proposal):continue
