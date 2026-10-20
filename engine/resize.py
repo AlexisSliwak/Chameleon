@@ -378,6 +378,16 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             score = proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
             if score > best[0]:
                 best = (score,method,design,dict(quality,raster=raster,selection_score=score))
+    if best[3]['minimum_font_size'] is not None and best[3]['minimum_font_size']<12:
+        from engine.refine import refine_text
+        refined=refine_text(source,best[2],units,backgrounds,measurer,assets_dir)
+        if refined is not None:
+            proxy,quality=evaluate_candidate(source,refined,backgrounds,measurer,assets_dir)
+            raster=raster_diagnostics(refined,fonts_dir,assets_dir)
+            score=proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+            candidates.append(('text-refinement',refined));valid.append((proxy,'text-refinement',refined,quality))
+            if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
+                best=(score,best[1]+'+text-refinement',refined,dict(quality,raster=raster,selection_score=score))
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
         approximate_frontier=True,quality_warning=best[3]['text_overflow_px']>.75 or best[3]['canvas_ink_overflow_px']>.01 or bool(best[3]['missing_glyphs']) or
         best[3]['raster']['low_contrast_proxy']>.05 or
