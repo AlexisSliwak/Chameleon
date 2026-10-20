@@ -10,6 +10,8 @@ Verified readability-refinement build: **109 engine tests passed**, plus **16 Ja
 
 Local evidence: [before/after comparison](.project-evaluation/text-refinement-research/final-index.html), [research and limitations](research/readability-refinement.txt), [per-block changes](.project-evaluation/text-refinement-research/final-text-changes.json), [hard-case gallery](.project-evaluation/text-final-hard/index.html), [public outputs](.project-evaluation/text-final-public/index.html), [challenge outputs](.project-evaluation/text-final-challenges/index.html) and [package verification](.project-evaluation/text-refinement-research/final-package-integrity.json). All three packaged offline output pairs match evaluation and twelve baked engine hashes match tested source. A two-case sample took 15.54 → 16.14 seconds and 268.2 → 274.8 MiB peak process RSS. The 62 cases include shared source families and repeated targets. Generated evidence is local and absent from a fresh clone; earlier experiments remain preserved. Extreme unbreakable text, tiny labels and some contrast failures remain. Live Adobe Express sideload/import is untested.
 
+The latest build passed 117 Python tests (including five review-tool tests), 16 JavaScript tests and three viewer-server tests. All 62 rendered cases passed preservation with JSON/PNG pairs byte-identical to the preceding readability build. Three offline packaged pairs and all twelve baked engine hashes were verified. The latest contrast diagnostic detects mixed-background failures that average RGB can hide. A trial using it to select layouts was rejected after visual regressions; selected designs remain unchanged. See [contrast research and review gate](research/contrast-and-review.txt). The new sampled signal contributes to quality warnings, not an accessibility certificate.
+
 ## Run the engine
 
 Use Bash on Linux or WSL with a working Docker Linux-container engine. Run these commands from this repository's root—the directory containing this README and Dockerfile. In the parent research workspace, enter it with `cd implementation`. Do not clone or reset over the existing checkout.
@@ -94,6 +96,22 @@ node --test tests/review_notes.test.cjs
 The Python suite above includes source validity, unchanged official-reference, preservation, timeout, failure-retention and gallery-escaping tests. Rebuild the image after engine changes before generating new production evidence.
 
 The initial advanced run rendered all 28 cases with zero structural/execution failures and 22 visual-warning cases. The expanded Python suite passed 81 tests; the review-note and existing viewer JavaScript suites passed 16 tests. Browser checks verified filtering, native zoom, note persistence and export/import. Extreme outputs include 1–3px text and a typography case with ink/overflow warnings: these are exposed weaknesses, not visual passes. Local artifacts: [gallery](.project-evaluation/hard-review-v1/index.html) and [inspection notes](.project-evaluation/hard-review-v1/review-report.md).
+
+## Anonymous manual comparison
+
+Create a local review pack from two completed evaluation directories containing the same cases and source previews:
+
+```bash
+python3 scripts/blind_review.py create --before .project-evaluation/grid-v1-hard --after .project-evaluation/text-final-hard --output .project-evaluation/blind-review-new --seed 1031
+```
+
+These example runs exist only in the working workspace; use your own completed run paths on a fresh clone. Give reviewers only `blind-review-new/reviewer/`, which contains source previews, anonymous PNG pairs, `index.html` and `ratings.csv`. Keep the answer key private until ratings are complete. Each CSV dimension accepts A, B, tie or neither; severe failure accepts A, B, both or none. Leave unseen cases blank and retain every row.
+
+```bash
+python3 scripts/blind_review.py summarize --key .project-evaluation/blind-review-new/answer-key.json --ratings .project-evaluation/blind-review-new/reviewer/ratings.csv
+```
+
+The summary preserves unrated cases, severe failures and source-family grouping. It does not infer competition rank. The prepared [28-case review pack](.project-evaluation/contrast-distribution/blind-hard/reviewer/index.html) evaluates the preceding readability improvement; no human ratings have been entered.
 
 ## Review in the viewer
 

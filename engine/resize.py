@@ -390,7 +390,7 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
                 best=(score,best[1]+'+text-refinement',refined,dict(quality,raster=raster,selection_score=score))
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
         approximate_frontier=True,quality_warning=best[3]['text_overflow_px']>.75 or best[3]['canvas_ink_overflow_px']>.01 or bool(best[3]['missing_glyphs']) or
-        best[3]['raster']['low_contrast_proxy']>.05 or
+        best[3]['raster']['low_contrast_proxy']>.05 or best[3]['raster']['sampled_low_contrast_proxy']>.05 or
         (best[3]['minimum_font_size'] is not None and best[3]['minimum_font_size']<8))
 
 
