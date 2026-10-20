@@ -58,6 +58,20 @@ class MeasurementTests(unittest.TestCase):
                         self.assertAlmostEqual(measured,raster,delta=2.0)
                     self.assertEqual(before,element)
 
+    def test_missing_glyph_does_not_force_renderable_copy_to_one_pixel(self):
+        measurer=TextMeasurer(ROOT/'brand_kit/fonts')
+        original=dict(id='mixed',type='text',x=0,y=0,width=500,height=100,
+                      font_size=24,content='Readable Latin / 東京',font_family='Solstice Sans')
+        before=copy.deepcopy(original)
+        fitted,extent=measurer.fit(original,500,100,24,allow_missing=True)
+        self.assertEqual(fitted['font_size'],24)
+        self.assertTrue(extent.fits(500,100))
+        self.assertGreaterEqual(extent.missing_glyphs,2)
+        self.assertEqual(fitted['content'],original['content'])
+        self.assertEqual(fitted['font_family'],original['font_family'])
+        self.assertEqual(original,before)
+
+
 
 if __name__ == '__main__':
     unittest.main()

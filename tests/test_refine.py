@@ -126,3 +126,26 @@ class TextRefinementTests(unittest.TestCase):
         after=assess(source,result,[],self.measurer)
         self.assertLessEqual(after['collision_proxy'],before['collision_proxy']+1e-6)
         self.assertEqual(design['elements'][1],result['elements'][1])
+
+    def test_missing_glyph_recovery_keeps_layout_and_exposes_missing_characters(self):
+        from engine.refine import recover_missing_text
+        source=copy.deepcopy(self.source)
+        source['elements'][1].update(content='Readable Latin / 東京',font_size=18)
+        design=copy.deepcopy(source);design['elements'][1]['font_size']=1
+        original=copy.deepcopy(design)
+        result=recover_missing_text(source,design,[],self.measurer)
+        self.assertIsNotNone(result)
+        self.assertGreater(result['elements'][1]['font_size'],1)
+        self.assertGreater(self.measurer.measure(result['elements'][1]).missing_glyphs,0)
+        self.assertEqual(result['elements'][0],original['elements'][0])
+        for key in original['elements'][1]:
+            if key!='font_size':self.assertEqual(original['elements'][1][key],result['elements'][1][key])
+        self.assertEqual(original,design)
+
+    def test_glyph_recovery_abstains_when_fit_is_impossible_or_glyphs_are_complete(self):
+        from engine.refine import recover_missing_text
+        self.assertIsNone(recover_missing_text(self.source,self.small,[],self.measurer))
+        source=copy.deepcopy(self.source)
+        source['elements'][1].update(content='東京'*30,width=1,height=1,font_size=18)
+        design=copy.deepcopy(source);design['elements'][1]['font_size']=1
+        self.assertIsNone(recover_missing_text(source,design,[],self.measurer))

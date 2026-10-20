@@ -6,13 +6,13 @@ The engine, batch runner, tests, rendered comparison harnesses and local viewer 
 
 There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-Verified current build: **119 Python tests**, **16 JavaScript tests** and **three viewer-server tests** passed. All **71 rendered cases** passed preservation/execution checks. The latest refinement can grow text upward from its existing bottom edge as well as downward from its top, preserving horizontal alignment and checking neighboring elements.
+Verified build: **125 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All **87 rendered cases** passed preservation/execution; 85 JSON/PNG pairs are unchanged, including all 71 prior cases. Three packaged offline pairs and all 12 baked engine hashes were verified.
 
-Three outputs improve four text blocks: the narrow programme headline grows 14 → 21px; the typography headline grows 16 → 19px and its schedule 8 → 12px; the workshop banner headline grows 24 → 26px. No text shrinks or image fields change; the other 68 JSON/PNG pairs are identical to the preceding build. These cases include shared families and nine previously inspected synthetic transfer cases, not independent visual trials or evidence of competition rank.
+The current engine adds **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
 
-Local evidence: [before/after gallery](.project-evaluation/vertical-refinement/index.html), [research and limitations](research/vertical-text-refinement.txt), [all comparisons](.project-evaluation/vertical-refinement/comparison.json), [hard outputs](.project-evaluation/vertical-trial-hard/index.html), [transfer outputs](.project-evaluation/vertical-transfer/index.html) and [package verification](.project-evaluation/vertical-refinement/package-integrity.json). Three packaged offline output pairs and twelve baked engine hashes were verified. Generated evidence is local and absent from a fresh clone; earlier runs remain preserved. Unbreakable narrow text, tiny labels and some contrast failures remain. Live Adobe Express sideload/import is untested.
+The new 16-case adversarial suite includes a 63-element catalogue, rotated groups, long tokens, 20 explicit lines, mixed scripts and color-alpha traps. Two mixed-script blocks improve from 1 → 20px and 1 → 6px without changing other text or imagery. Unsupported glyphs, narrow-token overflow and tiny text remain disclosed failures. Passing conservation/rendering does not establish readability or competition rank.
 
-The additional [sampled contrast diagnostic](research/contrast-and-review.txt) catches failures that average RGB can hide. Its direct use for selection was rejected after visual regressions; it contributes to warnings, not an accessibility certificate or a new selection objective.
+Local evidence: [extreme-case gallery](.project-evaluation/extreme-v3/index.html), [before/after comparisons](.project-evaluation/extreme-pressure/index.html), [previous vertical refinement](research/vertical-text-refinement.txt) and [package verification](.project-evaluation/extreme-pressure/package-integrity.json). Generated evidence is local and absent from a fresh clone; the adversarial fixtures are committed. Live Adobe Express sideload/import remains untested.
 
 ## Run the engine
 
@@ -99,6 +99,16 @@ The Python suite above includes source validity, unchanged official-reference, p
 
 The initial advanced run rendered all 28 cases with zero structural/execution failures and 22 visual-warning cases. The expanded Python suite passed 81 tests; the review-note and existing viewer JavaScript suites passed 16 tests. Browser checks verified filtering, native zoom, note persistence and export/import. Extreme outputs include 1–3px text and a typography case with ink/overflow warnings: these are exposed weaknesses, not visual passes. Local artifacts: [gallery](.project-evaluation/hard-review-v1/index.html) and [inspection notes](.project-evaluation/hard-review-v1/review-report.md).
 
+## Extreme-case review
+
+The additional suite deliberately includes infeasible targets and source defects. Expect visual-review flags for tiny copy, missing glyphs, overflow and contrast. Inspect actual PNGs; preservation passes alone are insufficient.
+
+```bash
+docker run --rm --network none --entrypoint python -v "$PWD:/app" chameleon-engine scripts/review_hard_cases.py --suite-dir tests/fixtures/extreme-challenges --output-dir .project-evaluation/extreme-review-new
+```
+
+The output directory must not already exist. The gallery retains every case, source preview, real PNG, JSON, failure and diagnostic. Its 120-second per-case harness timeout is a local test budget, not an official hackathon limit.
+
 ## Anonymous manual comparison
 
 Create a local review pack from two completed evaluation directories containing the same cases and source previews:
@@ -138,6 +148,7 @@ Open `http://localhost:5241/` and select original/output PNG and JSON files. The
 - Flow repair protects each foreground image independently using an incumbent-relative optical short-side floor capped at 16px. Single unrotated image units pack around visible alpha support while retaining the unchanged full asset box and aspect ratio. Final footprint remeasurement, canvas validation and a guard against increased collision prevent small assets being sacrificed for an aggregate score. These local tolerances are engineering policy, not official thresholds or guarantees of recognizability.
 - Weak repeated-card layouts additionally try measured row-major grids and image-beside/image-above arrangements. Shallow canvases can place headers, the existing action and footer in a side rail to recover card height. This bounded grammar preserves shared role tiers and source order, abstains above 12 cards, and tries at most 24 additional configurations. Unsupported structures retain the existing engine behavior. These candidates must satisfy the same image/collision guards and beat the retained raster-ranked result.
 - When selected text remains below 12px, a bounded local refinement pass can grow standalone text while preserving its horizontal alignment anchor and either its top or bottom edge, and reflow existing rectangular text panels within available space. No member font may shrink; panel changes require actual font growth. Measured collision, clipping, missing glyphs and hierarchy inversion cannot increase, and the final rendered score must improve without worse low-contrast diagnostics. Images, rotations, group membership and literal styles remain fixed. The pass abstains above 24 eligible units; it does not prove optimality or fix an impossible unbreakable token.
+- After selection, missing-glyph recovery may enlarge up to 24 unrotated affected text blocks within their existing boxes. It preserves other elements, rejects worsened safety/hierarchy diagnostics, and keeps missing-glyph warnings. It cannot supply unsupported characters or solve an impossible token.
 - Independent validation enforces conservation and the declared strict-bounds/style policy. Official requirements and conservative policy are distinct; the supplied [rules](RULES.md), [FAQ](FAQ.md) and [schema](chameleon_design_schema_v0.9.json) remain references, not an official scoring implementation.
 
 Dense banners can still have tiny type, weak hierarchy, overlap or subject occlusion. Ordered-flow repair samples a finite set of widths and text tiers, caps row frontiers and abstains above 64 layout units; it cannot prove global infeasibility. Very long unbreakable tokens may not fit a narrow canvas even at tiny type under the unchanged converter and content rules. A structurally valid result and a successful render do not establish legibility. The selected result includes no private diagnostics; inspect stderr/evaluation reports for quality warnings. No image regeneration, text rewriting, learned role classifier or visual-language model is implemented.

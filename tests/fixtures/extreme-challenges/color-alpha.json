@@ -1,0 +1,35 @@
+{
+  "task_id": "color-alpha",
+  "source": {
+    "canvas": {
+      "width": 400,
+      "height": 300
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 0,
+        "y": 0,
+        "width": 400,
+        "height": 300,
+        "fill_color": "rgba(255,255,255,1)",
+        "z_index": 0
+      },
+      {
+        "id": "faint-copy",
+        "type": "text",
+        "x": 30,
+        "y": 80,
+        "width": 340,
+        "height": 120,
+        "content": "This text must receive a contrast warning",
+        "font_family": "Solstice Sans",
+        "font_size": 24,
+        "color": "rgba(0,0,0,0.02)",
+        "z_index": 1
+      }
+    ]
+  }
+}

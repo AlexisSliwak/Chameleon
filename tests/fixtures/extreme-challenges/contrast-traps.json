@@ -1,0 +1,60 @@
+{
+  "task_id": "contrast-traps",
+  "source": {
+    "canvas": {
+      "width": 800,
+      "height": 400
+    },
+    "elements": [
+      {
+        "id": "dark",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 0,
+        "y": 0,
+        "width": 400,
+        "height": 400,
+        "fill_color": "rgba(0,0,0,1)",
+        "z_index": 0
+      },
+      {
+        "id": "light",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 400,
+        "y": 0,
+        "width": 400,
+        "height": 400,
+        "fill_color": "rgba(255,255,255,1)",
+        "z_index": 0
+      },
+      {
+        "id": "mixed",
+        "type": "text",
+        "x": 50,
+        "y": 30,
+        "width": 700,
+        "height": 80,
+        "content": "SPLIT BACKGROUND",
+        "font_family": "Solstice Sans",
+        "font_size": 38,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2
+      },
+      {
+        "id": "faint",
+        "type": "text",
+        "x": 430,
+        "y": 180,
+        "width": 330,
+        "height": 100,
+        "content": "Nearly invisible copy",
+        "font_family": "Solstice Sans",
+        "font_size": 30,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2,
+        "opacity": 0.02
+      }
+    ]
+  }
+}

@@ -79,7 +79,7 @@ class TextMeasurer:
         self.cache[key] = result
         return result
 
-    def fit(self, element, width, height, preferred):
+    def fit(self, element, width, height, preferred, *, allow_missing=False):
         """Largest feasible sampled integer renderer size; no monotonic wrap assumption."""
         upper = max(1, int(preferred))
         # Exact scan near the upper bound, then coarse stepping plus local refinement.
@@ -88,7 +88,9 @@ class TextMeasurer:
         for size in sizes:
             trial = dict(element, width=width, height=height, font_size=float(size))
             extent = self.measure(trial)
-            if extent.fits(width, height) and not extent.missing_glyphs:
+            # Recovery may retain unsupported glyphs while fitting the visible
+            # text. Candidate generation still requires complete glyph coverage.
+            if extent.fits(width, height) and (allow_missing or not extent.missing_glyphs):
                 return trial, extent
         trial = dict(element, width=width, height=height, font_size=1.0)
         return trial, self.measure(trial)

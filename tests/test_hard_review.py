@@ -76,6 +76,8 @@ class ReviewHarnessTests(unittest.TestCase):
         self.assertIn('Missing font glyphs',flags)
         self.assertIn('Possible low contrast',flags)
         self.assertEqual([],quality_flags(dict(minimum_font_size=20)))
+        self.assertIn('Possible low contrast',quality_flags(dict(minimum_font_size=24,
+                      raster=dict(low_contrast_proxy=0,sampled_low_contrast_proxy=.4))))
 
     def test_timeout_retains_partial_output(self):
         result=execute([sys.executable,'-c',"import time;print('started',flush=True);time.sleep(10)"],.2,ROOT)

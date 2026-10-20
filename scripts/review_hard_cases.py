@@ -91,7 +91,8 @@ def quality_flags(layout):
                                   ('collision_proxy','Possible content collision',.05)]:
         if layout.get(field,0)>threshold:
             flags.append(label)
-    if layout.get('raster',{}).get('low_contrast_proxy',0)>.05:
+    raster=layout.get('raster',{})
+    if max(raster.get('low_contrast_proxy',0),raster.get('sampled_low_contrast_proxy',0))>.05:
         flags.append('Possible low contrast')
     return flags
 

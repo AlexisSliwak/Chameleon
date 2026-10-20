@@ -314,6 +314,14 @@ def evaluate_candidate(source,design,backgrounds,measurer,assets_dir=None):
     return score,dict(quality,composition=composition)
 
 
+def _quality_warning(quality):
+    raster=quality['raster']
+    return (quality['text_overflow_px']>.75 or quality['canvas_ink_overflow_px']>.01
+            or bool(quality['missing_glyphs']) or raster['low_contrast_proxy']>.05
+            or raster['sampled_low_contrast_proxy']>.05
+            or (quality['minimum_font_size'] is not None and quality['minimum_font_size']<8))
+
+
 def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None):
     problems = validate_source(source)+validate_target(target_canvas)
     if problems:raise ValueError('; '.join(problems))
@@ -323,7 +331,8 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
     if source['canvas']==target_canvas and not validate_output(source,target_canvas,source):
         quality = assess(source,source,backgrounds,measurer,assets_dir)
         if quality['text_overflow_px']<=.75 and quality['canvas_ink_overflow_px']<=.01 and quality['collision_proxy']<.01 and not quality['missing_glyphs']:
-            return deepcopy(source),dict(quality,method='identity',candidates=1)
+            quality['raster']=raster_diagnostics(source,fonts_dir,assets_dir)
+            return deepcopy(source),dict(quality,method='identity',candidates=1,quality_warning=_quality_warning(quality))
     candidates = [('source-fit',source_fit(source,target_canvas,units,backgrounds,measurer))]
     candidates.extend(responsive_candidates(source,target_canvas,units,backgrounds,measurer) or [])
     from engine.editorial import editorial_candidates
@@ -388,10 +397,18 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             candidates.append(('text-refinement',refined));valid.append((proxy,'text-refinement',refined,quality))
             if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
                 best=(score,best[1]+'+text-refinement',refined,dict(quality,raster=raster,selection_score=score))
+    if best[3]['missing_glyphs']:
+        from engine.refine import recover_missing_text
+        recovered=recover_missing_text(source,best[2],backgrounds,measurer,assets_dir)
+        if recovered is not None:
+            proxy,quality=evaluate_candidate(source,recovered,backgrounds,measurer,assets_dir)
+            raster=raster_diagnostics(recovered,fonts_dir,assets_dir)
+            score=proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+            candidates.append(('glyph-recovery',recovered));valid.append((proxy,'glyph-recovery',recovered,quality))
+            if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
+                best=(score,best[1]+'+glyph-recovery',recovered,dict(quality,raster=raster,selection_score=score))
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
-        approximate_frontier=True,quality_warning=best[3]['text_overflow_px']>.75 or best[3]['canvas_ink_overflow_px']>.01 or bool(best[3]['missing_glyphs']) or
-        best[3]['raster']['low_contrast_proxy']>.05 or best[3]['raster']['sampled_low_contrast_proxy']>.05 or
-        (best[3]['minimum_font_size'] is not None and best[3]['minimum_font_size']<8))
+        approximate_frontier=True,quality_warning=_quality_warning(best[3]))
 
 
 def resize(source,target_canvas):

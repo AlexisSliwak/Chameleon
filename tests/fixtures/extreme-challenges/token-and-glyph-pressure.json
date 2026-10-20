@@ -1,0 +1,74 @@
+{
+  "task_id": "token-and-glyph-pressure",
+  "source": {
+    "canvas": {
+      "width": 1000,
+      "height": 1200
+    },
+    "elements": [
+      {
+        "id": "paper",
+        "type": "shape",
+        "shape_type": "rectangle",
+        "x": 0,
+        "y": 0,
+        "width": 1000,
+        "height": 1200,
+        "fill_color": "rgba(255,255,255,1)",
+        "z_index": 0
+      },
+      {
+        "id": "title",
+        "type": "text",
+        "x": 40,
+        "y": 40,
+        "width": 920,
+        "height": 120,
+        "content": "Text under extreme pressure",
+        "font_family": "Solstice Sans",
+        "font_size": 44,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2
+      },
+      {
+        "id": "token",
+        "type": "text",
+        "x": 40,
+        "y": 220,
+        "width": 920,
+        "height": 150,
+        "content": "https://example.invalid/unbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakableunbreakable",
+        "font_family": "Solstice Sans",
+        "font_size": 22,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2
+      },
+      {
+        "id": "lines",
+        "type": "text",
+        "x": 40,
+        "y": 430,
+        "width": 920,
+        "height": 550,
+        "content": "01 / Keep this explicit line\n02 / Keep this explicit line\n03 / Keep this explicit line\n04 / Keep this explicit line\n05 / Keep this explicit line\n06 / Keep this explicit line\n07 / Keep this explicit line\n08 / Keep this explicit line\n09 / Keep this explicit line\n10 / Keep this explicit line\n11 / Keep this explicit line\n12 / Keep this explicit line\n13 / Keep this explicit line\n14 / Keep this explicit line\n15 / Keep this explicit line\n16 / Keep this explicit line\n17 / Keep this explicit line\n18 / Keep this explicit line\n19 / Keep this explicit line\n20 / Keep this explicit line",
+        "font_family": "Solstice Sans",
+        "font_size": 20,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2
+      },
+      {
+        "id": "glyphs",
+        "type": "text",
+        "x": 40,
+        "y": 1020,
+        "width": 920,
+        "height": 100,
+        "content": "Caf\u00e9 / na\u00efve / \u6771\u4eac / \u0627\u0644\u0639\u0631\u0628\u064a\u0629 / \u0939\u093f\u0928\u094d\u0926\u0940",
+        "font_family": "Solstice Sans",
+        "font_size": 24,
+        "color": "rgba(20,48,37,1)",
+        "z_index": 2
+      }
+    ]
+  }
+}

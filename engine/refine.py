@@ -114,3 +114,33 @@ def refine_text(source, design, units, backgrounds, measurer, assets_dir=None):
                 if value>score+1e-6:selected=(proposal,value,q);score=value
         if selected:current,score,quality=selected
     return current if score>original_score+1e-6 else None
+
+
+def recover_missing_text(source, design, backgrounds, measurer, assets_dir=None):
+    """Recover fitting copy after selection without pretending missing glyphs exist."""
+    from engine.resize import evaluate_candidate
+    from engine.validation import validate_output
+
+    affected=[i for i,e in enumerate(design['elements']) if e['type']=='text'
+              and not e.get('rotation') and measurer.measure(e).missing_glyphs]
+    if not affected or len(affected)>24:return None
+    current=deepcopy(design)
+    score,quality=evaluate_candidate(source,current,backgrounds,measurer,assets_dir)
+    changed=False
+    scale=max(1.,sqrt(design['canvas']['width']*design['canvas']['height']/
+                      (source['canvas']['width']*source['canvas']['height'])))
+    for i in affected:
+        old=current['elements'][i]
+        trial,extent=measurer.fit(old,old['width'],old['height'],
+                                 max(old['font_size'],source['elements'][i]['font_size']*scale),
+                                 allow_missing=True)
+        if trial['font_size']<=old['font_size'] or not extent.fits(old['width'],old['height']):continue
+        proposal=dict(current,elements=list(current['elements']))
+        proposal['elements'][i]=trial
+        if validate_output(source,design['canvas'],proposal):continue
+        value,q=evaluate_candidate(source,proposal,backgrounds,measurer,assets_dir)
+        if value<=score+1e-6 or any(q[k]>quality[k]+1e-6 for k in (
+                'collision_proxy','text_overflow_px','canvas_ink_overflow_px','missing_glyphs','hierarchy_inversion')):continue
+        current,score,quality=proposal,value,q
+        changed=True
+    return current if changed else None

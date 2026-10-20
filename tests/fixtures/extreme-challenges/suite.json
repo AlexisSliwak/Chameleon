@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "provenance": "Agent-authored adversarial development suite. Catalogue is a structural derivative; other fixtures deliberately include infeasible/source-defect cases. Not hidden tests.",
+  "families": [
+    {
+      "file": "twelve-card-catalogue.json",
+      "name": "twelve-card-catalogue",
+      "tags": [
+        "63-elements",
+        "12-groups",
+        "derived-catalogue-structure"
+      ],
+      "review": [
+        "Keep every price attached to the correct numbered card.",
+        "Judge brand and text at native size; tiny output is a failure of readability even if preserved."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "portrait",
+          "canvas": {
+            "width": 600,
+            "height": 1200
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "tiny",
+          "canvas": {
+            "width": 300,
+            "height": 250
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "banner",
+          "canvas": {
+            "width": 970,
+            "height": 90
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "sliver",
+          "canvas": {
+            "width": 80,
+            "height": 600
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "rotated-sessions.json",
+      "name": "rotated-sessions",
+      "tags": [
+        "rotated-compound-groups",
+        "eight-sessions"
+      ],
+      "review": [
+        "Inspect rotated corners and all session labels."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "tall",
+          "canvas": {
+            "width": 120,
+            "height": 900
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "strip",
+          "canvas": {
+            "width": 1000,
+            "height": 60
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "small",
+          "canvas": {
+            "width": 160,
+            "height": 160
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "token-and-glyph-pressure.json",
+      "name": "token-and-glyph-pressure",
+      "tags": [
+        "unbreakable-token",
+        "20-explicit-lines",
+        "unsupported-glyph-probe"
+      ],
+      "review": [
+        "Missing glyphs and overflow must be disclosed; fonts and literal text must remain unchanged."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "portrait",
+          "canvas": {
+            "width": 160,
+            "height": 900
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "strip",
+          "canvas": {
+            "width": 728,
+            "height": 60
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "small",
+          "canvas": {
+            "width": 120,
+            "height": 120
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "contrast-traps.json",
+      "name": "contrast-traps",
+      "tags": [
+        "split-background",
+        "element-opacity",
+        "identity-diagnostics"
+      ],
+      "review": [
+        "Compare split-background copy against its actual placement.",
+        "Element opacity is intentionally probed against the pinned renderer; do not assume it applies."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity",
+          "canvas": {
+            "width": 800,
+            "height": 400
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "portrait",
+          "canvas": {
+            "width": 300,
+            "height": 600
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "banner",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        }
+      ]
+    },
+    {
+      "file": "color-alpha.json",
+      "name": "color-alpha",
+      "tags": [
+        "color-alpha",
+        "identity-diagnostics"
+      ],
+      "review": [
+        "Near-invisible text must remain preserved and receive a contrast warning."
+      ],
+      "expected_missing_assets": [],
+      "targets": [
+        {
+          "name": "identity",
+          "canvas": {
+            "width": 400,
+            "height": 300
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "portrait",
+          "canvas": {
+            "width": 300,
+            "height": 600
+          },
+          "pressure": "extreme"
+        },
+        {
+          "name": "banner",
+          "canvas": {
+            "width": 728,
+            "height": 90
+          },
+          "pressure": "extreme"
+        }
+      ]
+    }
+  ]
+}
