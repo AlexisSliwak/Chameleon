@@ -6,7 +6,7 @@ The engine, batch runner, tests, rendered comparison harnesses and local viewer 
 
 There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-Verified build: **125 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All **87 rendered cases** passed preservation/execution; 85 JSON/PNG pairs are unchanged, including all 71 prior cases. Three packaged offline pairs and all 12 baked engine hashes were verified.
+Verified build: **138 Python tests, 16 JavaScript tests and three viewer-server tests passed**. The preserved **87-case engine evaluation** passed preservation/execution; 85 JSON/PNG pairs are unchanged, including all 71 prior cases. Three packaged offline pairs and all 12 baked engine hashes were verified.
 
 The current engine adds **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
 
@@ -124,6 +124,25 @@ python3 scripts/blind_review.py summarize --key .project-evaluation/blind-review
 ```
 
 The summary preserves unrated cases, severe failures and source-family grouping. It does not infer competition rank. The prepared [28-case review pack](.project-evaluation/contrast-distribution/blind-hard/reviewer/index.html) evaluates the preceding readability improvement; no human ratings have been entered.
+
+## Inspect deeper visual evidence
+
+The offline perceptual-review tool adds per-element occlusion and glyph-local contrast evidence to the existing composition metrics. It renders each text/image with and without later layers, and uses diagnostic text-color probes to locate actual glyph coverage. It never modifies submitted designs or changes production selection. Human review covers readability, hierarchy, branding, grouping, spacing, balance, layering and polish; no human ratings are filled automatically.
+
+Run from this checkout with the built Docker runtime and an existing task/output pair. Use a fresh report directory:
+
+```bash
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P),target=/app" \
+  chameleon-engine -m scripts.perceptual_review \
+  --task input/chameleon_sample_level1_warmup.json \
+  --output output/chameleon_sample_level1_warmup_output.json \
+  --report-dir .project-evaluation/perceptual-review-new
+```
+
+Open the report directory's `index.html` file for source/output previews, per-element findings and contribution images. `report.json` contains composition metrics, input/runtime hashes, render count, elapsed time and coverage; `human-review.json` is an unfilled structured human-review record. The tool refuses to overwrite an existing directory, rejects contract-invalid outputs and retains processing failures in `failure.json`. Run the engine first if the output JSON does not yet exist.
+
+By default it reviews up to 64 nonempty text/image elements per design at a maximum raster dimension of 1024px. `--max-elements` (1–256) and `--max-size` (64–2048) adjust these explicit budgets; omitted IDs and text without reliable glyph coverage remain unassessed. This can require hundreds of diagnostic renders for a dense source/output pair. It is a development tool excluded from the production image, so mount the checkout as above. Contribution loss cannot identify a covered face or logo, and glyph contrast is not WCAG certification. Inspect original PNGs at native size and use the anonymous A/B workflow for independent preference comparisons. See [evaluation evidence and limitations](research/perceptual-evaluation.txt).
 
 ## Review in the viewer
 
