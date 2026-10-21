@@ -107,7 +107,7 @@ The additional suite deliberately includes infeasible targets and source defects
 docker run --rm --network none --entrypoint python -v "$PWD:/app" chameleon-engine scripts/review_hard_cases.py --suite-dir tests/fixtures/extreme-challenges --output-dir .project-evaluation/extreme-review-new
 ```
 
-The output directory must not already exist. The gallery retains every case, source preview, real PNG, JSON, failure and diagnostic. Its 120-second per-case harness timeout is a local test budget, not an official hackathon limit.
+The output directory must not already exist. The gallery retains every case, source preview, real PNG, JSON, failure and diagnostic. The [split-layout investigation](research/split-layout-study.txt) records rejected split/spacing alternatives; [open its side-by-side comparisons](.project-evaluation/split-layout/index.html) or the [refreshed source/output review](.project-evaluation/split-layout/review/index.html). Its 120-second per-case harness timeout is a local test budget, not an official hackathon limit.
 
 ## Anonymous manual comparison
 

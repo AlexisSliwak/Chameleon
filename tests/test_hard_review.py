@@ -145,5 +145,18 @@ class ReviewHarnessTests(unittest.TestCase):
                 self.assertTrue((Path(temp)/'cases'/row['id']/'result.json').exists())
 
 
+class GalleryProvenanceTests(unittest.TestCase):
+    def test_gallery_uses_actual_suite_counts_and_escaped_provenance(self):
+        manifest=dict(suite=dict(families=[dict(name='Only family')],provenance='<private> synthetic suite'))
+        with tempfile.TemporaryDirectory() as temp:
+            write_gallery(Path(temp),manifest,[],'provenance-test')
+            page=(Path(temp)/'index.html').read_text()
+            self.assertIn('Source families: 1',page)
+            self.assertIn('Cases: 0',page)
+            self.assertIn('&lt;private&gt; synthetic suite',page)
+            self.assertNotIn('Six authored stress families',page)
+            self.assertNotIn('<private>',page)
+
+
 if __name__=='__main__':
     unittest.main()

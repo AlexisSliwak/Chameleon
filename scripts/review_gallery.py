@@ -13,8 +13,8 @@ def write_gallery(directory, manifest, rows, run_id):
              '<header><p class="eyebrow">CHAMELEON / ADVANCED REVIEW LAB</p><h1>See where the layout holds up.</h1>',
              '<p>Actual outputs from the production engine. Inspect at native size before approving a design. '
              'Checks passing does not mean the design is readable or attractive.</p>',
-             '<p class="muted">Six authored stress families and the official level-three reference. '
-             'Extreme cases probe capacity limits; these are not hidden organizer tests.</p>',
+             '<p class="muted">Source families: '+str(len(manifest['suite']['families']))+' · Cases: '+str(len(rows))+'. '
+             +esc(manifest['suite'].get('provenance','Declared development suite; not hidden organizer tests.'))+'</p>',
              '<nav><a href="manifest.json">Frozen run manifest</a><a href="results.json">Raw results</a>'
              '<a href="inputs/suite.json">Test specification</a></nav></header>',
              '<section class="toolbar" aria-label="Review controls"><label>Family <select id="family"><option value="all">All families</option>']
