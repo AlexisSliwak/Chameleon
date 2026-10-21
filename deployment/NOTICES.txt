@@ -1,0 +1,4 @@
+Qwen3.5-2B quantization: unsloth/Qwen3.5-2B-GGUF, revision f6d5376be1edb4d416d56da11e5397a961aca8ae. Apache-2.0. Unmodified public GGUF files; see model.json for hashes.
+Base model license retrieved from https://huggingface.co/Qwen/Qwen3.5-2B/resolve/15852e8c16360a2fea060d615a32b45270f8a8fc/LICENSE
+llama.cpp: ggml-org/llama.cpp, revision 889f2ec96deacbc2d8a9a67dbe181eaa43a2fb3b. MIT; see llama-LICENSE.
+Public availability and licenses do not establish hackathon model approval.

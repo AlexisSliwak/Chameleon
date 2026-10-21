@@ -385,8 +385,10 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
                 continue
             raster = raster_diagnostics(design,fonts_dir,assets_dir)
             score = proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+            measured=(score,method,design,dict(quality,raster=raster,selection_score=score))
+            ranked.append(measured)
             if score > best[0]:
-                best = (score,method,design,dict(quality,raster=raster,selection_score=score))
+                best = measured
     if best[3]['minimum_font_size'] is not None and best[3]['minimum_font_size']<12:
         from engine.refine import refine_text
         refined=refine_text(source,best[2],units,backgrounds,measurer,assets_dir)
@@ -407,8 +409,10 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             candidates.append(('glyph-recovery',recovered));valid.append((proxy,'glyph-recovery',recovered,quality))
             if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
                 best=(score,best[1]+'+glyph-recovery',recovered,dict(quality,raster=raster,selection_score=score))
+    from engine.semantics import select_with_semantics
+    best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir)
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
-        approximate_frontier=True,quality_warning=_quality_warning(best[3]))
+        semantic=semantic,approximate_frontier=True,quality_warning=_quality_warning(best[3]))
 
 
 def resize(source,target_canvas):

@@ -2,13 +2,13 @@
 
 Retarget an existing design to a new canvas while preserving its elements, text, font families and image assets. The engine compares source-preserving fits, bounded responsive arrangements, editorial compositions and repeated-card layouts, then attempts measured ordered-flow repair when the selected layout has tiny text, overflow or collisions. It measures actual glyphs and visible image footprints, preserves backing relationships and checks proposals against rendered imagery.
 
-The engine, batch runner, tests, rendered comparison harnesses and local viewer are implemented. Ordered-flow repair allocates space around shared text-size tiers and reflows supported multi-text panels before shrinking their content. Selection remains deterministic and offline; it uses no hosted AI service or model weights.
+The engine, batch runner, tests, rendered comparison harnesses and local viewer are implemented. Ordered-flow repair allocates space around shared text-size tiers and reflows supported multi-text panels before shrinking their content. Selection runs offline. A bounded local vision advisor can annotate important asset regions and compare valid finalists; deterministic preservation and readability checks still control admissible outputs. It never generates replacement imagery or writes layout coordinates.
 
 There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-Verified build: **138 Python tests, 16 JavaScript tests and three viewer-server tests passed**. The preserved **87-case engine evaluation** passed preservation/execution; 85 JSON/PNG pairs are unchanged, including all 71 prior cases. Three packaged offline pairs and all 12 baked engine hashes were verified.
+Verified build: **168 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All 14 baked engine files match current source. Six packaged offline JSON/PNG pairs (three tasks with the advisor off, three with both uses enabled) match the previous baseline byte for byte. The preserved **87-case engine evaluation** is prior regression evidence; it was not rerun for this advisor experiment. See the [implementation study](research/offline-advisor-implementation.txt) for controls, failures and resource measurements.
 
-The current engine adds **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
+The engine includes **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
 
 The new 16-case adversarial suite includes a 63-element catalogue, rotated groups, long tokens, 20 explicit lines, mixed scripts and color-alpha traps. Two mixed-script blocks improve from 1 → 20px and 1 → 6px without changing other text or imagery. Unsupported glyphs, narrow-token overflow and tiny text remain disclosed failures. Passing conservation/rendering does not establish readability or competition rank.
 
@@ -28,18 +28,62 @@ docker run --rm --network none \
   chameleon-engine
 ```
 
-The build fetches Python/renderer dependencies; execution has no network. No API key, hosted AI service or model weights are required. The Dockerfile pins its Python 3.11 base image by digest and bundles the supplied assets/fonts. `requirements.txt` includes `requirements.lock.txt`, which fixes 41 Python dependencies, including the renderer at commit `a17e1fb9a732959dd6c21ae168d5ee09d74bd64f`. System packages still resolve through the image's configured package repositories at build time. Host Python packages are not needed for this primary path.
+The build fetches Python/renderer dependencies, compiles a pinned CPU llama.cpp runtime, and downloads a pinned Qwen3.5-2B quantization plus vision projector (1,949,063,104 bytes together). Downloads are checked against size and SHA-256 in [deployment/model.json](deployment/model.json). Execution has no external network and requires no API key, host model service, GPU or runtime download. The Dockerfile pins its Python 3.11 base image by digest and bundles the supplied assets/fonts. `requirements.txt` includes `requirements.lock.txt`, which fixes 41 Python dependencies, including the renderer at commit `a17e1fb9a732959dd6c21ae168d5ee09d74bd64f`. System packages still resolve through the image's configured package repositories at build time. Host Python packages are not needed for this primary path.
 
 Place task JSON files in `input/`. Each contains `source` (a canvas and elements) and `target_canvas` (width and height). The three supplied samples are included. For each successful task, `output/` receives `<task>_output.json` and `<task>_output.png`. The runner emits JSON-line diagnostics to stderr, continues after a failed task, and exits nonzero if any task fails or no tasks exist. Reusing the output directory replaces each task's prior output pair; use a new directory when preserving evidence.
 
 The runner validates source/output contracts, rejects input mutation, and requires a real PNG. Renderer import failures propagate; there is no labeled-box fallback. The supplied advanced sample deliberately references missing `solstice_holiday_badge_2025.png` through element `holiday_watermark`; its official placeholder is expected. Do not add a replacement asset.
+
+The [offline-advisor study](research/offline-advisor-implementation.txt) records actual CPU trials and rejected protocols. On the tested Ryzen host (8-CPU/8-GiB container), the first public task took **2.13s with the advisor off, 3.25s for region guidance and 32.56s for both uses**. Region guidance used exact alpha and made no model calls on that task. Model-process peak RSS was **2.91 GiB**. None of the three public outputs changed; held-out visual benefit and actual MacBook timing remain unproven. The critic detects the obvious hidden-product control with explicit image labels, but still gives inconsistent raw votes on identical layouts; the acceptance guard rejects them.
+
+## Organizer benchmark setup
+
+Use Docker with Linux containers and build the **linux/amd64** image above, including on Apple Silicon. The production image contains the model, runtime, renderer, assets and fonts; the host needs no Python environment. Model inference uses CPU inside the container. MacBook Metal acceleration is not assumed available through this Linux container. Allow additional disk space for build layers, compiler sources and the final image, beyond the 1.95 GB weight files.
+
+For a reproducible CPU trial, allocate 8 CPUs and 8 GiB to Docker, then run:
+
+```bash
+mkdir -p benchmark-output
+docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
+  -e CHAMELEON_ADVISOR=both \
+  --mount "type=bind,source=$(pwd -P)/input,target=/app/input,readonly" \
+  --mount "type=bind,source=$(pwd -P)/benchmark-output,target=/app/output" \
+  chameleon-engine 2>benchmark-output/diagnostics.jsonl
+```
+
+These resource limits are a research configuration, **not an organizer requirement or a measured MacBook performance promise**. The required model approval list/size cap and exact benchmark hardware remain unresolved in the captured rules. Public weights and an Apache-2.0 license do not establish approval. The organizer can reproduce the model-free path with the same image and command by setting `CHAMELEON_ADVISOR=off`.
+
+The advisor defaults to `off` until model eligibility and held-out visual benefit are established. Both uses are implemented and can be enabled together with `CHAMELEON_ADVISOR=both`; `regions` and `critic` isolate each use for controlled ablations. These use one engine and one candidate generator.
+
+Region guidance uses exact alpha support for isolated transparent assets, preserving the entire mark without inference. Other assets receive a bounded model proposal using a neutral-gray preview. The official renderer measures crop and occlusion losses relative to the source.
+
+The critic receives explicit labels before each image and compares the source and two finalists in both orders. Acceptance requires matching issue/element evidence in both orders; a named winner without a concrete issue and affected IDs cannot be accepted. Raw judgments remain visible in diagnostics, including contradictory or position-biased votes.
+
+A preference cannot override contract checks or measured aggregate glyph, contrast, minimum-font-size and hierarchy guards; each foreground image also retains its size floor. These proxies do not prove that every element or human-visible quality improves. When inference is needed, missing/corrupt weights, unavailable runtime, timeouts and invalid judgments retain the deterministic winner and emit an explicit fallback diagnostic. Identity cases and cases without a safe challenger skip inference.
+
+At most four unique foreground assets and two distinct-method challengers are examined per task; source designs over 64 elements abstain. Diagnostic rendering also abstains above 16 million pixels per canvas/asset/intermediate or 32 million cumulative element pixels, before native-size allocation. Asset judgments are cached by content, model manifest and prompt within a batch. The runtime starts lazily once per process, verifies weights, binds only to loopback and makes no external requests. Each request has a 90-second deadline and startup a 120-second deadline. These bounds are engineering choices; a timeout is a fallback, not a successful model evaluation. See [runtime and model notices](deployment/NOTICES.txt).
+
+To reproduce the semantic calibration and save actual outputs for manual review, use a new directory:
+
+```bash
+chameleon_semantic=".project-evaluation/semantic-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+mkdir -p .project-evaluation
+docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
+  --entrypoint python \
+  --mount "type=bind,source=$(pwd -P)/scripts,target=/app/scripts,readonly" \
+  --mount "type=bind,source=$(pwd -P)/input,target=/app/input,readonly" \
+  --mount "type=bind,source=$(pwd -P)/.project-evaluation,target=/app/.project-evaluation" \
+  chameleon-engine scripts/evaluate_semantics.py --output-dir "$chameleon_semantic"
+```
+
+Open the generated `index.html` and `results.json`. They retain transparent/opaque asset, clear/occluded-product and identical-pair controls, all four modes on the public samples, raw votes, abstentions, timings, process peak RSS and source/model hashes. Each condition starts a fresh model/cache; subsequent tasks in that condition reuse its runtime. Control failures are reported separately from contract failures. These are development controls, not held-out human ratings. A convincing presentation requires blinded source-family-held-out review and actual MacBook timing before claiming a visual or performance advantage.
 
 ## Test and inspect rendered comparisons
 
 The production image intentionally excludes development tests/scripts. Mount this checkout at `/app` to run the current source against the built runtime:
 
 ```bash
-docker run --rm --network none --entrypoint python \
+docker run --rm --network none -e CHAMELEON_ADVISOR=off --entrypoint python \
   --mount "type=bind,source=$(pwd -P),target=/app" \
   chameleon-engine -m unittest discover -s tests
 ```
