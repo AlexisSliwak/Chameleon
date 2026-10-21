@@ -2,11 +2,11 @@
 
 Retarget an existing design to a new canvas while preserving its elements, text, font families and image assets. The engine compares source-preserving fits, bounded responsive arrangements, editorial compositions and repeated-card layouts, then attempts measured ordered-flow repair when the selected layout has tiny text, overflow or collisions. It measures actual glyphs and visible image footprints, preserves backing relationships and checks proposals against rendered imagery.
 
-The engine, batch runner, tests, rendered comparison harnesses and local viewer are implemented. Ordered-flow repair allocates space around shared text-size tiers and reflows supported multi-text panels before shrinking their content. Selection runs offline. A bounded local vision advisor can annotate important asset regions and compare valid finalists; deterministic preservation and readability checks still control admissible outputs. It never generates replacement imagery or writes layout coordinates.
+The engine, batch runner, tests, rendered comparison harnesses and local viewer are implemented. Ordered-flow repair allocates space around shared text-size tiers and reflows supported multi-text panels before shrinking their content. Selection runs offline. A bounded local vision advisor can propose important asset regions; deterministic preservation and readability checks still control admissible outputs. It never generates replacement imagery or writes layout coordinates.
 
 There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-Verified build: **168 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All 14 baked engine files match current source. Six packaged offline JSON/PNG pairs (three tasks with the advisor off, three with both uses enabled) match the previous baseline byte for byte. The preserved **87-case engine evaluation** is prior regression evidence; it was not rerun for this advisor experiment. See the [implementation study](research/offline-advisor-implementation.txt) for controls, failures and resource measurements.
+Verified build: **167 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All 14 baked engine files match current source. Six packaged offline JSON/PNG pairs (three tasks with the advisor off, three with region guidance enabled) match the previous baseline byte for byte. The preserved **87-case engine evaluation** is prior regression evidence; it was not rerun for this critic-removal change. See the [implementation study](research/offline-advisor-implementation.txt) for controls, failures and resource measurements.
 
 The engine includes **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
 
@@ -34,7 +34,7 @@ Place task JSON files in `input/`. Each contains `source` (a canvas and elements
 
 The runner validates source/output contracts, rejects input mutation, and requires a real PNG. Renderer import failures propagate; there is no labeled-box fallback. The supplied advanced sample deliberately references missing `solstice_holiday_badge_2025.png` through element `holiday_watermark`; its official placeholder is expected. Do not add a replacement asset.
 
-The [offline-advisor study](research/offline-advisor-implementation.txt) records actual CPU trials and rejected protocols. On the tested Ryzen host (8-CPU/8-GiB container), the first public task took **2.13s with the advisor off, 3.25s for region guidance and 32.56s for both uses**. Region guidance used exact alpha and made no model calls on that task. Model-process peak RSS was **2.91 GiB**. None of the three public outputs changed; held-out visual benefit and actual MacBook timing remain unproven. The critic detects the obvious hidden-product control with explicit image labels, but still gives inconsistent raw votes on identical layouts; the acceptance guard rejects them.
+The [offline-advisor study](research/offline-advisor-implementation.txt) preserves the earlier experiments. The critic has been removed; region guidance is the only optional advisor. In the previous CPU trial, the first public task took **2.13s with guidance off and 3.25s with region guidance**, using exact alpha support and no inference on that task. The three public outputs were unchanged; held-out visual benefit and actual MacBook timing remain unproven.
 
 ## Organizer benchmark setup
 
@@ -45,7 +45,7 @@ For a reproducible CPU trial, allocate 8 CPUs and 8 GiB to Docker, then run:
 ```bash
 mkdir -p benchmark-output
 docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
-  -e CHAMELEON_ADVISOR=both \
+  -e CHAMELEON_ADVISOR=regions \
   --mount "type=bind,source=$(pwd -P)/input,target=/app/input,readonly" \
   --mount "type=bind,source=$(pwd -P)/benchmark-output,target=/app/output" \
   chameleon-engine 2>benchmark-output/diagnostics.jsonl
@@ -53,13 +53,11 @@ docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
 
 These resource limits are a research configuration, **not an organizer requirement or a measured MacBook performance promise**. The required model approval list/size cap and exact benchmark hardware remain unresolved in the captured rules. Public weights and an Apache-2.0 license do not establish approval. The organizer can reproduce the model-free path with the same image and command by setting `CHAMELEON_ADVISOR=off`.
 
-The advisor defaults to `off` until model eligibility and held-out visual benefit are established. Both uses are implemented and can be enabled together with `CHAMELEON_ADVISOR=both`; `regions` and `critic` isolate each use for controlled ablations. These use one engine and one candidate generator.
+The advisor defaults to `off` until model eligibility and held-out visual benefit are established. Set `CHAMELEON_ADVISOR=regions` to enable region guidance, or `CHAMELEON_ADVISOR=off` for the baseline. These are the only supported modes; the critic and combined mode have been removed.
 
 Region guidance uses exact alpha support for isolated transparent assets, preserving the entire mark without inference. Other assets receive a bounded model proposal using a neutral-gray preview. The official renderer measures crop and occlusion losses relative to the source.
 
-The critic receives explicit labels before each image and compares the source and two finalists in both orders. Acceptance requires matching issue/element evidence in both orders; a named winner without a concrete issue and affected IDs cannot be accepted. Raw judgments remain visible in diagnostics, including contradictory or position-biased votes.
-
-A preference cannot override contract checks or measured aggregate glyph, contrast, minimum-font-size and hierarchy guards; each foreground image also retains its size floor. These proxies do not prove that every element or human-visible quality improves. When inference is needed, missing/corrupt weights, unavailable runtime, timeouts and invalid judgments retain the deterministic winner and emit an explicit fallback diagnostic. Identity cases and cases without a safe challenger skip inference.
+A region-based selection cannot override contract checks or measured aggregate glyph, contrast, minimum-font-size and hierarchy guards; each foreground image also retains its size floor. These proxies do not prove that every element or human-visible quality improves. When inference is needed, missing/corrupt weights, unavailable runtime, timeouts and invalid judgments retain the deterministic winner and emit an explicit fallback diagnostic. Identity cases and cases without a safe challenger skip inference.
 
 At most four unique foreground assets and two distinct-method challengers are examined per task; source designs over 64 elements abstain. Diagnostic rendering also abstains above 16 million pixels per canvas/asset/intermediate or 32 million cumulative element pixels, before native-size allocation. Asset judgments are cached by content, model manifest and prompt within a batch. The runtime starts lazily once per process, verifies weights, binds only to loopback and makes no external requests. Each request has a 90-second deadline and startup a 120-second deadline. These bounds are engineering choices; a timeout is a fallback, not a successful model evaluation. See [runtime and model notices](deployment/NOTICES.txt).
 
@@ -76,7 +74,7 @@ docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
   chameleon-engine scripts/evaluate_semantics.py --output-dir "$chameleon_semantic"
 ```
 
-Open the generated `index.html` and `results.json`. They retain transparent/opaque asset, clear/occluded-product and identical-pair controls, all four modes on the public samples, raw votes, abstentions, timings, process peak RSS and source/model hashes. Each condition starts a fresh model/cache; subsequent tasks in that condition reuse its runtime. Control failures are reported separately from contract failures. These are development controls, not held-out human ratings. A convincing presentation requires blinded source-family-held-out review and actual MacBook timing before claiming a visual or performance advantage.
+Open the generated `index.html` and `results.json`. They retain transparent/opaque asset and clear/occluded-product controls, baseline and region-guidance outputs on the public samples, region observations, abstentions, timings, process peak RSS and source/model hashes. Each condition starts a fresh model/cache; subsequent tasks in that condition reuse its runtime. Control failures are reported separately from contract failures. These are development controls, not held-out human ratings. A convincing presentation requires blinded source-family-held-out review and actual MacBook timing before claiming a visual or performance advantage.
 
 ## Test and inspect rendered comparisons
 

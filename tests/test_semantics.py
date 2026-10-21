@@ -11,7 +11,7 @@ from PIL import Image
 from deployment.fetch_model import fetch, download_ranges
 from engine.local_model import LocalModel, ModelUnavailable
 from engine.semantics import (validate_region, annotate_assets, region_visibility,
-                              compare_layouts, safe_challenger, select_with_semantics, check_render_budget, _preview, _CACHE)
+                              safe_challenger, select_with_semantics, check_render_budget, _CACHE)
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -67,11 +67,10 @@ class SemanticTests(unittest.TestCase):
     def test_raster_budget_rejects_large_source_before_conversion(self):
         source=copy.deepcopy(self.source);source['canvas']=dict(width=100000,height=100000)
         with patch('engine.semantics.convert_chameleon_to_crello') as convert:
-            with self.assertRaises(ModelUnavailable):_preview(source,self.fonts,self.assets)
             with self.assertRaises(ModelUnavailable):region_visibility(source,{},self.fonts,self.assets)
             convert.assert_not_called()
         old=candidate(self.source);new_design=copy.deepcopy(self.source);new_design['elements'][0]['x']=60
-        result,info=select_with_semantics(source,old,[candidate(new_design,'new')],self.fonts,self.assets,model=FakeModel([]),mode='both')
+        result,info=select_with_semantics(source,old,[candidate(new_design,'new')],self.fonts,self.assets,model=FakeModel([]),mode='regions')
         self.assertIs(old,result);self.assertEqual('fallback',info['status'])
 
     def test_cover_intermediate_budget_precedes_allocation(self):
@@ -155,17 +154,29 @@ class SemanticTests(unittest.TestCase):
         self.assertFalse(safe_challenger(self.source,old,new,self.assets))
         self.assertTrue(safe_challenger(self.source,old,old,self.assets))
 
-    def compare(self,replies):
-        with patch('engine.semantics._preview',return_value=Image.new('RGB',(10,10))):
-            return compare_layouts(self.source,self.source,self.source,self.fonts,self.assets,FakeModel(replies))
+    def test_removed_modes_are_rejected_without_inference(self):
+        old=candidate(self.source)
+        for mode in ('critic','both'):
+            with patch('engine.semantics.get_model') as get:
+                with self.assertRaisesRegex(ValueError,'off or regions'):
+                    select_with_semantics(self.source,old,[],self.fonts,self.assets,mode=mode)
+                get.assert_not_called()
 
-    def test_preference_requires_reversed_order_and_matching_evidence(self):
-        vote=lambda winner,issue='grouping':dict(winner=winner,issue=issue if winner in ('A','B') else 'none',element_ids=['art'] if winner in ('A','B') else [])
-        self.assertTrue(self.compare([vote('B'),vote('A')])[0])
-        for replies in ([vote('A'),vote('A')],[vote('B'),vote('B')],[vote('tie'),vote('tie')],[vote('B'),vote('A','hierarchy')]):
-            self.assertFalse(self.compare(replies)[0])
-        with self.assertRaises(ModelUnavailable):self.compare([dict(winner='B',issue='grouping',element_ids=['invented'])])
-        self.assertFalse(self.compare([dict(winner='A',issue='none',element_ids=[])]*2)[0])
+    def test_region_selection_rolls_back_after_later_render_failure(self):
+        source=copy.deepcopy(self.source)
+        source['elements'].append(dict(id='cover',type='shape',shape_type='rectangle',fill_color='rgba(0,0,0,1)',x=0,y=0,width=25,height=25,z_index=1))
+        blocked=copy.deepcopy(source);blocked['elements'][-1].update(x=50,y=50,width=100,height=100)
+        other=copy.deepcopy(source);other['elements'][-1]['x']=5
+        old=candidate(blocked);first=candidate(source,'first');second=candidate(other,'second')
+        def render(design,*args):
+            if design is other:raise OSError('render failure')
+            return region_visibility(design,*args)
+        with patch('engine.semantics.region_visibility',side_effect=render):
+            result,info=select_with_semantics(source,old,[first,second],self.fonts,self.assets,
+                model=FakeModel([dict(kind='subject',box=[0,0,1,1])]),mode='regions')
+        self.assertIs(old,result);self.assertEqual('fallback',info['status'])
+        self.assertTrue(info['comparisons'][0]['rolled_back'])
+        self.assertFalse(info['comparisons'][0]['accepted'])
 
     def test_default_keeps_model_free_path_without_approval_assumption(self):
         old=candidate(self.source)
@@ -178,19 +189,8 @@ class SemanticTests(unittest.TestCase):
         m=FakeModel([ModelUnavailable('failed')])
         result,info=select_with_semantics(self.source,old,[new],self.fonts,self.assets,model=m,mode='off')
         self.assertIs(old,result);self.assertEqual(0,m.calls)
-        result,info=select_with_semantics(self.source,old,[new],self.fonts,self.assets,model=m,mode='both')
+        result,info=select_with_semantics(self.source,old,[new],self.fonts,self.assets,model=m,mode='regions')
         self.assertIs(old,result);self.assertEqual('fallback',info['status'])
-
-    def test_critic_selection_and_rollback_after_later_failure(self):
-        old=candidate(self.source);d=copy.deepcopy(self.source);d['elements'][0]['x']=55;new=candidate(d,'new')
-        vote=lambda winner:dict(winner=winner,issue='grouping',element_ids=['art'])
-        with patch('engine.semantics._preview',return_value=Image.new('RGB',(10,10))):
-            result,info=select_with_semantics(self.source,old,[new],self.fonts,self.assets,model=FakeModel([vote('B'),vote('A')]),mode='critic')
-            self.assertIs(new,result);self.assertEqual('selected',info['status'])
-            d2=copy.deepcopy(d);d2['elements'][0]['x']=60
-            result,info=select_with_semantics(self.source,old,[new,candidate(d2)],self.fonts,self.assets,
-                model=FakeModel([vote('B'),vote('A'),ModelUnavailable('late failure')]),mode='critic')
-            self.assertIs(old,result);self.assertEqual('fallback',info['status'])
 
     def test_region_only_selection_improves_visible_subject(self):
         old_design=copy.deepcopy(self.source)
@@ -211,12 +211,12 @@ class SemanticTests(unittest.TestCase):
         self.assertIs(old,result)
         self.assertEqual(0,info['baseline_regions']['loss'])
 
-    def test_both_vetoes_subject_loss_before_asking_critic(self):
+    def test_regions_veto_subject_loss(self):
         source=copy.deepcopy(self.source)
         source['elements'].append(dict(id='cover',type='shape',shape_type='rectangle',fill_color='rgba(0,0,0,1)',x=0,y=0,width=25,height=25,z_index=1))
         blocked=copy.deepcopy(source);blocked['elements'][-1].update(x=50,y=50,width=100,height=100)
         old=candidate(source);model=FakeModel([dict(kind='subject',box=[0,0,1,1])])
-        result,info=select_with_semantics(source,old,[candidate(blocked,'blocked')],self.fonts,self.assets,model=model,mode='both')
+        result,info=select_with_semantics(source,old,[candidate(blocked,'blocked')],self.fonts,self.assets,model=model,mode='regions')
         self.assertIs(old,result);self.assertEqual(1,model.calls)
         self.assertEqual('region_regression',info['comparisons'][0]['reason'])
 
@@ -224,7 +224,7 @@ class SemanticTests(unittest.TestCase):
         source=copy.deepcopy(self.source)
         source['elements']=[dict(source['elements'][0],id=str(n)) for n in range(65)]
         old=candidate(source);model=FakeModel([])
-        result,info=select_with_semantics(source,old,[],self.fonts,self.assets,model=model,mode='both')
+        result,info=select_with_semantics(source,old,[],self.fonts,self.assets,model=model,mode='regions')
         self.assertIs(old,result);self.assertEqual('budget_abstention',info['status']);self.assertEqual(0,model.calls)
 
 class ArtifactTests(unittest.TestCase):
@@ -291,12 +291,3 @@ class ArtifactTests(unittest.TestCase):
                 target=Path(temp)/'model.partial'
                 with self.assertRaises(ValueError):download_ranges(dict(url='https://example.invalid',bytes=4,name='model'),target,chunk_size=4)
                 self.assertEqual([],list(Path(temp).iterdir()))
-
-    def test_image_labels_precede_their_corresponding_pixels(self):
-        model=LocalModel();model.url='http://127.0.0.1:12345'
-        good={'choices':[{'finish_reason':'stop','message':{'content':'{}'}}]}
-        with patch.object(model,'start'),patch.object(model.http,'open',return_value=BytesIO(json.dumps(good).encode())) as post:
-            model.ask('compare',[Image.new('RGB',(2,2)),Image.new('RGB',(3,3))],{},labels=['A','B'])
-            content=json.loads(post.call_args.args[0].data)['messages'][1]['content']
-            self.assertEqual(['text','text','image_url','text','image_url'],[part['type'] for part in content])
-            self.assertEqual('A',content[1]['text']);self.assertEqual('B',content[3]['text'])

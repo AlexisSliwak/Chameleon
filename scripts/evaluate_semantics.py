@@ -6,6 +6,7 @@ Runtime failures remain explicit evidence; contract failures make the harness fa
 import argparse
 from copy import deepcopy
 import hashlib
+from io import BytesIO
 import html
 import json
 import os
@@ -17,9 +18,17 @@ from PIL import Image, ImageDraw, ImageChops
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import engine.local_model as local
 from engine.local_model import ModelUnavailable
-from engine.semantics import annotate_assets, compare_layouts, region_visibility, _preview, _CACHE, REGION_PROMPT, REGION_SCHEMA, validate_region
+from engine.semantics import annotate_assets, region_visibility, check_render_budget, _CACHE, REGION_PROMPT, REGION_SCHEMA, validate_region
 from engine.resize import resize_with_diagnostics
 from engine.validation import validate_output
+from renderer.converter.convert import _get_renderer, convert_chameleon_to_crello
+
+
+def _preview(design,fonts,assets):
+    check_render_budget(design,assets)
+    renderer=_get_renderer(str(fonts))
+    example,_=convert_chameleon_to_crello(design,renderer.font_manager,str(assets))
+    return Image.open(BytesIO(renderer.render(example,max_size=512,format='png'))).convert('RGB')
 
 
 def run(destination, controls_only=False):
@@ -99,22 +108,9 @@ def run(destination, controls_only=False):
             report['trials'].append(dict(name=phase,passed=False,failure=str(exc),seconds=time.monotonic()-started))
         save()
 
-        begin_session('critic-control')
-        for name,a,b,expected in [('clear versus hidden product',blocked,source,True),('identical candidates',source,source,False)]:
-            started=time.monotonic()
-            try:
-                accepted,votes=compare_layouts(source,a,b,fonts,assets,model)
-                policy_pass=accepted==expected
-                model_pass=accepted if expected else all(v['winner'] in ('tie','abstain') for v in votes)
-                report['trials'].append(dict(name=name,accepted=accepted,expected=expected,passed=policy_pass and model_pass,
-                    policy_pass=policy_pass,model_pass=model_pass,votes=votes,seconds=time.monotonic()-started))
-            except ModelUnavailable as exc:
-                report['trials'].append(dict(name=name,passed=False,failure=str(exc),seconds=time.monotonic()-started))
-            save()
-
         # Fresh session/cache per condition. Batch tasks share only their own
         # condition's runtime, matching production cold-start then warm reuse.
-        for mode in (() if controls_only else ('off','regions','critic','both')):
+        for mode in (() if controls_only else ('off','regions')):
             begin_session('batch-'+mode);os.environ['CHAMELEON_ADVISOR']=mode
             for index,path in enumerate(paths):
                 task=json.loads(path.read_text());before=deepcopy(task)
@@ -136,7 +132,7 @@ def run(destination, controls_only=False):
                       child_peak_rss_kib=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
                       process_peak_rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         save()
-        (destination/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>Semantic calibration</title><style>body{font:16px system-ui;margin:2rem}main{display:flex;flex-wrap:wrap;gap:20px}figure{margin:0;width:400px}img{max-width:100%;border:1px solid #999}</style><h1>Offline semantic calibration</h1><p>Known development controls; fresh model session per condition. Inspect raw votes, control failures, timings and safety diagnostics in <a href="results.json">results.json</a>. Images are previews; JSON retains exact geometry. A fallback is not successful model inference.</p><main>'+''.join('<figure><figcaption>'+html.escape(n)+'</figcaption><a href="'+n+'.json"><img src="'+n+'.png"></a></figure>' for n in rows)+'</main>')
+        (destination/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>Semantic calibration</title><style>body{font:16px system-ui;margin:2rem}main{display:flex;flex-wrap:wrap;gap:20px}figure{margin:0;width:400px}img{max-width:100%;border:1px solid #999}</style><h1>Offline semantic calibration</h1><p>Known development controls; fresh model session per condition. Inspect region observations, control failures, timings and safety diagnostics in <a href="results.json">results.json</a>. Images are previews; JSON retains exact geometry. A fallback is not successful model inference.</p><main>'+''.join('<figure><figcaption>'+html.escape(n)+'</figcaption><a href="'+n+'.json"><img src="'+n+'.png"></a></figure>' for n in rows)+'</main>')
     if contract_errors:raise ValueError('Contract failures; see results.json')
 
 if __name__=='__main__':
