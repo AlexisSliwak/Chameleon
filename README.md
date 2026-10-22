@@ -6,7 +6,7 @@ The engine, batch runner, tests, rendered comparison harnesses and local viewer 
 
 There is one production engine and one selected output per task. Source-preserving fitting is an internal candidate and safety mechanism, not a separate product or runtime mode. Development scripts, tests, the viewer and saved experiments are excluded from the production image.
 
-Verified build: **167 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All 14 baked engine files match current source. Six packaged offline JSON/PNG pairs (three tasks with the advisor off, three with region guidance enabled) match the previous baseline byte for byte. The preserved **87-case engine evaluation** is prior regression evidence; it was not rerun for this critic-removal change. See the [implementation study](research/offline-advisor-implementation.txt) for controls, failures and resource measurements.
+Verified build: **175 Python tests, 16 JavaScript tests and three viewer-server tests passed**. All 14 baked engine files match current source. Six packaged offline JSON/PNG pairs (three tasks with the advisor off, three with region guidance enabled) match the previous baseline byte for byte. The preserved **87-case engine evaluation** is prior regression evidence; it was not rerun for this region-repair change. See the [implementation study](research/offline-advisor-implementation.txt) for controls, failures and resource measurements.
 
 The engine includes **recovery for text containing unsupported glyphs**: it enlarges the renderable portion within the already-selected box, preserves all other elements, and retains missing-glyph warnings. Identity outputs now receive raster diagnostics, and manual review includes the sampled contrast signal. See [extreme-case findings and rejected experiments](research/extreme-pressure.txt).
 
@@ -55,11 +55,13 @@ These resource limits are a research configuration, **not an organizer requireme
 
 The advisor defaults to `off` until model eligibility and held-out visual benefit are established. Set `CHAMELEON_ADVISOR=regions` to enable region guidance, or `CHAMELEON_ADVISOR=off` for the baseline. These are the only supported modes; the critic and combined mode have been removed.
 
-Region guidance uses exact alpha support for isolated transparent assets, preserving the entire mark without inference. Other assets receive a bounded model proposal using a neutral-gray preview. The official renderer measures crop and occlusion losses relative to the source.
+Region guidance uses exact alpha support for isolated transparent assets, preserving the entire mark without inference. Other assets receive a bounded model proposal using a neutral-gray preview. The official renderer measures crop and occlusion losses relative to the source. When retargeting introduces visibility loss, guidance now generates up to 16 repairs: translate an image or overlapping group, or expand a singleton centered-cover viewport where space permits. Explicit groups and inferred source backings move together. Each proposal goes through the normal geometry, composition, text and raster checks before selection.
 
-A region-based selection cannot override contract checks or measured aggregate glyph, contrast, minimum-font-size and hierarchy guards; each foreground image also retains its size floor. These proxies do not prove that every element or human-visible quality improves. When inference is needed, missing/corrupt weights, unavailable runtime, timeouts and invalid judgments retain the deterministic winner and emit an explicit fallback diagnostic. Identity cases and cases without a safe challenger skip inference.
+A region-based selection cannot override contract checks or measured aggregate glyph, contrast, minimum-font-size and hierarchy guards; each foreground image also retains its size floor. These proxies do not prove that every element or human-visible quality improves. When inference is needed, missing/corrupt weights, unavailable runtime, timeouts and invalid judgments retain the deterministic winner and emit an explicit fallback diagnostic. Identity cases skip inference. Guidance can now propose a repair even when the existing shortlist has no safe challenger.
 
-At most four unique foreground assets and two distinct-method challengers are examined per task; source designs over 64 elements abstain. Diagnostic rendering also abstains above 16 million pixels per canvas/asset/intermediate or 32 million cumulative element pixels, before native-size allocation. Asset judgments are cached by content, model manifest and prompt within a batch. The runtime starts lazily once per process, verifies weights, binds only to loopback and makes no external requests. Each request has a 90-second deadline and startup a 120-second deadline. These bounds are engineering choices; a timeout is a fallback, not a successful model evaluation. See [runtime and model notices](deployment/NOTICES.txt).
+At most four unique foreground assets, two existing distinct-method challengers and 16 generated repairs are examined per task; source designs over 64 elements abstain. Diagnostic rendering also abstains above 16 million pixels per canvas/asset/intermediate or 32 million cumulative element pixels, before native-size allocation. Asset judgments are cached by content, model manifest and prompt within a batch. The runtime starts lazily once per process, verifies weights, binds only to loopback and makes no external requests. Each request has a 90-second deadline and startup a 120-second deadline. These bounds are engineering choices; a timeout is a fallback, not a successful model evaluation. See [runtime and model notices](deployment/NOTICES.txt).
+
+The [region-repair study](research/region-repair.txt) records four rendered component controls: visibility recovered from 33–67% to 100%, including the supplied bottle label. These are constructed failures with real rendering and guards, not held-out end-to-end wins. Public sample outputs remained unchanged. Rotated repairs, background-subject localization, precise opaque-image localization and multi-step joint repairs remain limitations.
 
 To reproduce the semantic calibration and save actual outputs for manual review, use a new directory:
 
@@ -75,6 +77,15 @@ docker run --rm --platform linux/amd64 --network none --cpus 8 --memory 8g \
 ```
 
 Open the generated `index.html` and `results.json`. They retain transparent/opaque asset and clear/occluded-product controls, baseline and region-guidance outputs on the public samples, region observations, abstentions, timings, process peak RSS and source/model hashes. Each condition starts a fresh model/cache; subsequent tasks in that condition reuse its runtime. Control failures are reported separately from contract failures. These are development controls, not held-out human ratings. A convincing presentation requires blinded source-family-held-out review and actual MacBook timing before claiming a visual or performance advantage.
+
+To reproduce the repair controls and their source/before/after gallery, mount the full checkout (the harness uses development fixtures in tests/):
+
+```bash
+chameleon_repairs=".project-evaluation/region-repairs-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+docker run --rm --network none --entrypoint python \
+  --mount "type=bind,source=$(pwd -P),target=/app" \
+  chameleon-engine scripts/evaluate_region_repairs.py --output-dir "$chameleon_repairs"
+```
 
 ## Test and inspect rendered comparisons
 

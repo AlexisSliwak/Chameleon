@@ -5,6 +5,7 @@ renderer; improvements must satisfy deterministic preservation checks.
 No model-authored geometry, copy, assets or styles enter submitted designs.
 """
 from collections import OrderedDict
+from copy import deepcopy
 import hashlib
 from io import BytesIO
 import json
@@ -187,7 +188,69 @@ def safe_challenger(source, incumbent, candidate, assets=None):
     return retains_images(candidate[2],image_floors(incumbent[2],assets),assets)
 
 
-def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=None):
+def region_repairs(design, annotations, assets, limit=16, source=None):
+    """Bounded translations and cover expansion around an endangered asset region.
+
+    Proposals only: exact rendered visibility and the normal quality guards decide.
+    Preserve group membership, rotation, stacking and all original asset data.
+    Translations retain sizes; singleton cover viewports may expand within bounds.
+    Rotated elements abstain because axis-aligned contact proposals are ambiguous.
+    """
+    if limit<=0:return
+    elements=design['elements'];cw,ch=design['canvas']['width'],design['canvas']['height']
+    ordered=sorted(elements,key=lambda e:e.get('z_index',0));seen=set();count=0
+    from engine.resize import make_units, background_indices
+    reference=source or design;by_id={e['id']:e for e in elements};units={}
+    for unit in make_units(reference,background_indices(reference),assets):
+        group=[by_id[reference['elements'][i]['id']] for i in unit.indices]
+        for e in group:units[e['id']]=group
+    def members(element):return units.get(element['id'],[])
+    for index,e in enumerate(ordered):
+        if e['type']!='image' or e['asset_id'] not in annotations or e.get('rotation',0):continue
+        with Image.open(assets/e['asset_id']) as image:iw,ih=image.size
+        l,t,r,b=annotations[e['asset_id']]['box']
+        w,h=e['width'],e['height']
+        # The renderer only supports centered cover: recover cropped content by
+        # expanding the viewport, never by inventing focal offsets or editing pixels.
+        if e.get('fit')=='cover' and len(members(e))==1:
+            nw,nh=max(w,h*iw/ih),max(h,w*ih/iw)
+            if nw<=cw and nh<=ch and (nw>w+1e-6 or nh>h+1e-6):
+                proposal=deepcopy(design)
+                edited=next(a for a in proposal['elements'] if a['id']==e['id'])
+                edited.update(x=max(0,min(cw-nw,e['x']+(w-nw)/2)),
+                              y=max(0,min(ch-nh,e['y']+(h-nh)/2)),width=nw,height=nh)
+                yield 'region-cover-expansion',proposal
+                count+=1
+                if count>=limit:return
+        scale=(max if e.get('fit')=='cover' else min)(w/iw,h/ih)
+        ox,oy=e['x']+(w-iw*scale)/2,e['y']+(h-ih*scale)/2
+        left,top=max(e['x'],ox+l*iw*scale),max(e['y'],oy+t*ih*scale)
+        right,bottom=min(e['x']+w,ox+r*iw*scale),min(e['y']+h,oy+b*ih*scale)
+        if right<=left or bottom<=top:continue
+        for cover in ordered[index+1:]:
+            if cover.get('opacity',1)==0 or cover.get('rotation',0):continue
+            x,y=cover['x'],cover['y'];rr,bb=x+cover['width'],y+cover['height']
+            if min(right,rr)<=max(left,x) or min(bottom,bb)<=max(top,y):continue
+            image_group=members(e);cover_group=members(cover)
+            if not image_group or not cover_group or any(a['id']==b['id'] for a in image_group for b in cover_group):continue
+            gap=2.
+            shifts=[(x-right-gap,0),(rr-left+gap,0),(0,y-bottom-gap),(0,bb-top+gap)]
+            for group,sign in ((image_group,1),(cover_group,-1)):
+                if any(a.get('rotation',0) for a in group):continue
+                for dx,dy in sorted(shifts,key=lambda d:abs(d[0])+abs(d[1])):
+                    dx*=sign;dy*=sign
+                    if any(a['x']+dx<0 or a['y']+dy<0 or a['x']+dx+a['width']>cw or a['y']+dy+a['height']>ch for a in group):continue
+                    ids={a['id'] for a in group};key=(tuple(sorted(ids)),round(dx,6),round(dy,6))
+                    if key in seen:continue
+                    seen.add(key);proposal=deepcopy(design)
+                    for a in proposal['elements']:
+                        if a['id'] in ids:a['x']+=dx;a['y']+=dy
+                    yield 'region-translation',proposal
+                    count+=1
+                    if count>=limit:return
+
+
+def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=None,evaluate=None):
     mode=os.environ.get('CHAMELEON_ADVISOR','off') if mode is None else mode
     if mode not in ('off','regions'):raise ValueError('CHAMELEON_ADVISOR must be off or regions')
     diagnostics=dict(mode=mode,status='disabled' if mode=='off' else 'unchanged',comparisons=[])
@@ -206,7 +269,7 @@ def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=No
             if key not in seen and candidate[1] not in methods and safe_challenger(source,original,candidate,assets):
                 seen.add(key);methods.add(candidate[1]);candidates.append(candidate)
             if len(candidates)==2:break
-        if not candidates:
+        if not candidates and evaluate is None:
             diagnostics['status']='no_safe_challenger';return best,diagnostics
         annotations,diagnostics['annotations']=annotate_assets(source,assets,model)
         source_visibility=region_visibility(source,annotations,fonts,assets)
@@ -220,6 +283,15 @@ def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=No
             return result
         visibility=measure(best[2])
         diagnostics['baseline_regions']=visibility
+        diagnostics['repair_proposals']=0
+        # No introduced visibility loss means no reason to disturb source intent.
+        if evaluate is not None and visibility['loss']>1e-3:
+            for method,design in region_repairs(best[2],annotations,assets,source=source):
+                diagnostics['repair_proposals']+=1
+                check_render_budget(design,assets)
+                candidate=evaluate(method,design)
+                if candidate is not None and safe_challenger(source,original,candidate,assets):
+                    candidates.append(candidate)
         for candidate in candidates:
             observed=measure(candidate[2])
             row=dict(method=candidate[1],regions=observed,accepted=False)
@@ -227,7 +299,8 @@ def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=No
             old={r['id']:r['retained'] for r in visibility['elements']}
             if any(r['retained']+1e-3<old.get(r['id'],0) for r in observed['elements']):
                 row['reason']='region_regression';diagnostics['comparisons'].append(row);continue
-            accept=bool(annotations and observed['loss']<visibility['loss']-.1)
+            gains=[min(expected.get(r['id'],0),r['retained'])-min(expected.get(r['id'],0),old.get(r['id'],0)) for r in observed['elements']]
+            accept=bool(annotations and observed['loss']<visibility['loss']-1e-3 and max(gains,default=0)>.1)
             if accept and safe_challenger(source,best,candidate,assets):
                 best=candidate;visibility=observed;row['accepted']=True
             diagnostics['comparisons'].append(row)

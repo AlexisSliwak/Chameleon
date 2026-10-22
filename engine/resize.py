@@ -410,7 +410,15 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
                 best=(score,best[1]+'+glyph-recovery',recovered,dict(quality,raster=raster,selection_score=score))
     from engine.semantics import select_with_semantics
-    best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir)
+    def evaluate_region_repair(method,design):
+        candidates.append((method,design))
+        if validate_output(source,target_canvas,design):return None
+        proxy,quality=evaluate_candidate(source,design,backgrounds,measurer,assets_dir)
+        valid.append((proxy,method,design,quality))
+        raster=raster_diagnostics(design,fonts_dir,assets_dir)
+        score=proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+        return score,method,design,dict(quality,raster=raster,selection_score=score)
+    best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir,evaluate=evaluate_region_repair)
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
         semantic=semantic,approximate_frontier=True,quality_warning=_quality_warning(best[3]))
 
