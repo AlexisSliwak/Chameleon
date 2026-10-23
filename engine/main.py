@@ -111,7 +111,8 @@ def run_batch(input_dir, output_dir, assets_dir, fonts_dir=None):
             except OSError as cleanup_error:
                 record['cleanup_error'] = str(cleanup_error)
         record['timings_seconds']['total'] = time.perf_counter() - started
-        # Diagnostics never enter the submitted design JSON. stderr is JSONL.
+        # Diagnostics never enter the submitted design JSON. Runner records are JSON;
+        # native dependencies may also emit plain-text warnings to stderr.
         print(json.dumps(record, ensure_ascii=False, allow_nan=False), file=sys.stderr)
     return 1 if failures else 0
 
