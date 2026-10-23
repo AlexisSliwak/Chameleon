@@ -3,8 +3,10 @@ from copy import deepcopy
 from pathlib import Path
 import tempfile
 import unittest
+import os
+from unittest.mock import patch
 from PIL import Image, ImageDraw
-from engine.semantics import region_repairs, region_visibility, select_with_semantics, _CACHE
+from engine.semantics import region_repairs, region_visibility, select_with_semantics, prepare_region_pool, _CACHE
 from engine.resize import evaluate_candidate, background_indices
 from engine.measure import TextMeasurer
 from engine.pixels import raster_diagnostics
@@ -129,3 +131,60 @@ class RegionRepairTests(unittest.TestCase):
         evaluate=evaluator(source,self.assets);old=evaluate('baseline',baseline)
         result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=FakeModel([]),evaluate=evaluate)
         self.assertIs(old,result);self.assertEqual(0,info['repair_proposals'])
+
+    def test_early_pool_can_repair_a_seed_outside_the_existing_shortlist(self):
+        source,seed=fixture(self.assets);evaluate=evaluator(source,self.assets)
+        blocked=deepcopy(seed);blocked['elements'][1].update(x=0,y=0,width=240,height=200)
+        original=evaluate('incumbent',blocked);seed_row=evaluate('source-fit',seed)
+        model=FakeModel([]);snapshot=deepcopy(source)
+        with patch.dict(os.environ,{'CHAMELEON_ADVISOR':'regions'}),patch('engine.semantics.get_model',return_value=model):
+            proposals,context=prepare_region_pool(source,[seed_row],FONTS,self.assets)
+        self.assertGreater(len(proposals),0);self.assertLessEqual(len(proposals),16)
+        guided=[evaluate(method,d) for method,d in proposals]
+        result,info=select_with_semantics(source,original,[],FONTS,self.assets,mode='regions',model=model,
+            evaluate=evaluate,context=context,guided=guided)
+        self.assertEqual('selected',info['status'],info)
+        self.assertEqual(snapshot,source)
+        self.assertEqual(0,model.calls)
+        observed=region_visibility(result[2],context['annotations'],FONTS,self.assets)
+        self.assertGreater(observed['elements'][0]['retained'],.98)
+
+    def test_background_subject_moves_occluder_not_background(self):
+        source,baseline=fixture(self.assets)
+        source['elements'][0].update(x=0,y=0,width=240,height=200,fit='cover')
+        source['elements'][1].update(x=0,y=0,width=40,height=100)
+        baseline=deepcopy(source);baseline['elements'][1].update(x=100,y=50)
+        evaluate=evaluator(source,self.assets);old=evaluate('source-fit',baseline)
+        with patch.dict(os.environ,{'CHAMELEON_ADVISOR':'regions'}),patch('engine.semantics.get_model',return_value=FakeModel([])):
+            proposals,context=prepare_region_pool(source,[old],FONTS,self.assets)
+        self.assertTrue(proposals)
+        for _,d in proposals:self.assertEqual(baseline['elements'][0],d['elements'][0])
+        result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=FakeModel([]),evaluate=evaluate,
+            context=context,guided=[evaluate(m,d) for m,d in proposals])
+        self.assertEqual('selected',info['status'],info)
+        self.assertEqual(baseline['elements'][0],result[2]['elements'][0])
+
+    def test_preparation_off_and_failed_inference_preserve_incumbent(self):
+        source,baseline=fixture(self.assets);old=evaluator(source,self.assets)('base',baseline)
+        with patch.dict(os.environ,{'CHAMELEON_ADVISOR':'off'}),patch('engine.semantics.get_model') as model:
+            self.assertEqual(([],None),prepare_region_pool(source,[old],FONTS,self.assets));model.assert_not_called()
+        Image.new('RGB',(100,100),'red').save(self.assets/'subject.png')
+        from engine.local_model import ModelUnavailable
+        model=FakeModel([ModelUnavailable('unavailable')])
+        with patch.dict(os.environ,{'CHAMELEON_ADVISOR':'regions'}),patch('engine.semantics.get_model',return_value=model):
+            proposals,context=prepare_region_pool(source,[old],FONTS,self.assets)
+        self.assertEqual([],proposals);self.assertEqual('fallback',context['status'])
+        result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=model,context=context)
+        self.assertIs(old,result);self.assertEqual(1,info['model_calls'])
+
+    def test_early_proposal_render_failure_retains_incumbent(self):
+        source,seed=fixture(self.assets);evaluate=evaluator(source,self.assets);old=evaluate('source-fit',seed)
+        model=FakeModel([])
+        with patch.dict(os.environ,{'CHAMELEON_ADVISOR':'regions'}),patch('engine.semantics.get_model',return_value=model):
+            proposals,context=prepare_region_pool(source,[old],FONTS,self.assets)
+        self.assertTrue(proposals)
+        def broken(*args):raise OSError('proposal renderer unavailable')
+        result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=model,
+            evaluate=broken,context=context,proposals=proposals)
+        self.assertIs(old,result);self.assertEqual('fallback',info['status'])
+        self.assertIn('proposal renderer unavailable',info['reason'])

@@ -345,6 +345,8 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             score,quality = evaluate_candidate(source,design,backgrounds,measurer,assets_dir)
             valid.append((score,method,design,quality))
     if not valid:raise ValueError('No candidate satisfies independent output validation')
+    from engine.semantics import prepare_region_pool
+    region_proposals,region_context=prepare_region_pool(source,valid,fonts_dir,assets_dir)
     # Rerank a bounded shortlist using actual unchanged imagery. This is a
     # weak signal: average contrast cannot recognize subjects or certify text.
     shortlist = sorted(valid,key=lambda c:c[0],reverse=True)[:5]
@@ -418,7 +420,8 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
         raster=raster_diagnostics(design,fonts_dir,assets_dir)
         score=proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
         return score,method,design,dict(quality,raster=raster,selection_score=score)
-    best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir,evaluate=evaluate_region_repair)
+    best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir,
+        evaluate=evaluate_region_repair,context=region_context,proposals=region_proposals)
     return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
         semantic=semantic,approximate_frontier=True,quality_warning=_quality_warning(best[3]))
 

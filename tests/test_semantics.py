@@ -78,14 +78,14 @@ class SemanticTests(unittest.TestCase):
         source=copy.deepcopy(self.source);source['elements'][0].update(width=200,height=200,fit='cover')
         with self.assertRaisesRegex(ModelUnavailable,'cover raster'):check_render_budget(source,self.assets)
 
-    def test_partial_bleed_is_not_mistaken_for_full_canvas_background(self):
+    def test_partial_bleed_and_full_background_share_cached_annotation(self):
         source=copy.deepcopy(self.source);source['elements'][0].update(x=-100,y=0,width=200,height=200,fit='cover')
         model=FakeModel([dict(kind='subject',box=[0,0,1,1])])
         annotations,_=annotate_assets(source,self.assets,model)
         self.assertIn('art.png',annotations)
         source['elements'][0]['x']=0
         annotations,_=annotate_assets(source,self.assets,model)
-        self.assertFalse(annotations);self.assertEqual(1,model.calls)
+        self.assertIn('art.png',annotations);self.assertEqual(1,model.calls)
 
     def test_abstention_ignores_unused_box_but_rejects_nonfinite_values(self):
         model=FakeModel([dict(kind='none',box=[0,0,1,1])])
