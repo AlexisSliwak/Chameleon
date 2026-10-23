@@ -4,7 +4,8 @@ import itertools
 import math
 import unittest
 
-from engine.frontier import State, combine, normalize_leaf, prune_states
+from engine.frontier import State, combine, normalize_leaf, prune_states, _ordered
+from unittest.mock import patch
 
 
 def leaf(index, w, h, utility=0, interface="default"):
@@ -175,6 +176,27 @@ class TargetBoundTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         combine([[leaf(0, 1, 1)]], **{name:bound})
         self.assertEqual([], combine([[leaf(0, 3, 4)]], max_width=2))
+
+
+class OrderingRegressionTests(unittest.TestCase):
+    def test_distinct_numeric_order_does_not_serialize_placements(self):
+        states=[leaf(0,n,1,n) for n in range(1,40)]
+        with patch('engine.frontier._placement_key',side_effect=AssertionError('unnecessary serialization')):
+            actual=_ordered(list(reversed(states)))
+        self.assertEqual(states,actual)
+
+    def test_tied_order_is_stable_and_observes_nested_mutation(self):
+        a=State(10,10,1,{0:dict(x=9,y=0,width=1,height=1)})
+        b=State(10,10,1,{0:dict(x=1,y=0,width=1,height=1)})
+        self.assertEqual([b,a],_ordered([a,b]))
+        a.placements[0]['x']=0
+        self.assertEqual([a,b],_ordered([b,a]))
+        self.assertEqual([a,a,b],_ordered([a,b,a]))
+
+    def test_capping_repeated_references_does_not_duplicate_extremes(self):
+        a=leaf(0,1,8,3);b=leaf(0,8,1,2);c=leaf(0,4,4,5)
+        from engine.frontier import _cap
+        self.assertEqual(2,len(_cap([a,a,b,b,c,c],2)))
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ Utility is additive. Capping is a deterministic approximation, not exact search.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import product
+from itertools import product, groupby
 import json
 import math
 from typing import Hashable, Mapping, Sequence
@@ -38,6 +38,22 @@ def _placement_key(state: State):
 def _order(state: State):
     return (state.width * state.height, state.width, state.height,
             -state.utility, repr(state.interface), _placement_key(state))
+
+
+def _ordered(states):
+    """Preserve exact legacy ordering; serialize placements only for real ties.
+
+    No state-lifetime cache: callers may mutate nested placement dictionaries.
+    A fresh sort must observe those changes even though State itself is frozen.
+    """
+    def primary(s):
+        return s.width*s.height,s.width,s.height,-s.utility,repr(s.interface)
+    result=[]
+    for _,group in groupby(sorted(states,key=primary),key=primary):
+        tied=list(group)
+        if len(tied)>1:tied.sort(key=_placement_key)
+        result.extend(tied)
+    return result
 
 
 def normalize_leaf(
@@ -84,12 +100,12 @@ def prune_states(states: Sequence[State], cap: int | None = None) -> list[State]
     """
     _validate_cap(cap)
     result = []
-    for state in sorted(states, key=_order):
+    for state in _ordered(states):
         if any(_dominates(kept, state) for kept in result):
             continue
         result = [kept for kept in result if not _dominates(state, kept)]
         result.append(state)
-    return _cap(result, cap)
+    return _cap(result, cap, presorted=True)
 
 
 def _dominates(a: State, b: State):
@@ -102,16 +118,16 @@ def _validate_cap(cap):
         raise ValueError("cap must be a positive integer or None")
 
 
-def _cap(states, cap):
-    if cap is not None and len(states) > cap:
-        ordered = sorted(states, key=_order)
+def _cap(states, cap, presorted=False):
+    ordered = list(states) if presorted else _ordered(states)
+    if cap is not None and len(ordered) > cap:
         selected = []
         # Extremes protect both space feasibility and utility. Distinct extremes
         # all survive when cap >= 4; this remains an approximate global beam.
-        extremes = [min(ordered, key=lambda s: (-s.utility, *_order(s))),
-                    min(ordered, key=_order),
-                    min(ordered, key=lambda s: (s.width, *_order(s))),
-                    min(ordered, key=lambda s: (s.height, *_order(s)))]
+        extremes = [min(ordered, key=lambda s: -s.utility),
+                    ordered[0],
+                    min(ordered, key=lambda s: s.width),
+                    min(ordered, key=lambda s: s.height)]
         for state in extremes:
             if not any(state is kept for kept in selected) and len(selected) < cap:
                 selected.append(state)
@@ -122,8 +138,8 @@ def _cap(states, cap):
         if count:
             indices = [round((i + .5) * len(remaining) / count - .5) for i in range(count)]
             selected.extend(remaining[i] for i in indices)
-        states = selected
-    return sorted(states, key=_order)
+        return _ordered(selected)
+    return ordered
 
 
 def combine(

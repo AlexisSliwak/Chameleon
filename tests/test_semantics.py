@@ -218,7 +218,8 @@ class SemanticTests(unittest.TestCase):
         old=candidate(source);model=FakeModel([dict(kind='subject',box=[0,0,1,1])])
         result,info=select_with_semantics(source,old,[candidate(blocked,'blocked')],self.fonts,self.assets,model=model,mode='regions')
         self.assertIs(old,result);self.assertEqual(1,model.calls)
-        self.assertEqual('region_regression',info['comparisons'][0]['reason'])
+        self.assertEqual('no_recoverable_loss',info['short_circuit'])
+        self.assertEqual([],info['comparisons'])
 
     def test_design_budget_skips_inference(self):
         source=copy.deepcopy(self.source)
@@ -226,6 +227,18 @@ class SemanticTests(unittest.TestCase):
         old=candidate(source);model=FakeModel([])
         result,info=select_with_semantics(source,old,[],self.fonts,self.assets,model=model,mode='regions')
         self.assertIs(old,result);self.assertEqual('budget_abstention',info['status']);self.assertEqual(0,model.calls)
+
+    def test_recovery_cannot_sacrifice_a_second_subject(self):
+        source=copy.deepcopy(self.source);source['canvas']['width']=400
+        source['elements'].append(dict(source['elements'][0],id='second',x=220))
+        source['elements'].append(dict(id='cover',type='shape',shape_type='rectangle',fill_color='rgba(0,0,0,1)',x=0,y=0,width=50,height=100,z_index=1))
+        blocked=copy.deepcopy(source);blocked['elements'][-1].update(x=50,y=50)
+        alternative=copy.deepcopy(source);alternative['elements'][-1].update(x=220,y=50)
+        old=candidate(blocked)
+        result,info=select_with_semantics(source,old,[candidate(alternative,'trade')],self.fonts,self.assets,
+            mode='regions',model=FakeModel([dict(kind='subject',box=[0,0,1,1])]))
+        self.assertIs(old,result);self.assertGreater(info['baseline_regions']['loss'],.1)
+        self.assertEqual('region_regression',info['comparisons'][0]['reason'])
 
 class ArtifactTests(unittest.TestCase):
     def test_download_verify_cache_and_corruption(self):

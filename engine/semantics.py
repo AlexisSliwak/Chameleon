@@ -320,16 +320,17 @@ def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=No
         else:
             annotations=context['annotations'];diagnostics['annotations']=context['trace']
         candidates.extend(row for row in guided if safe_challenger(source,original,row,assets))
-        for method,design in proposals:
-            if evaluate is None:break
-            candidate=evaluate(method,design)
-            if candidate is not None and safe_challenger(source,original,candidate,assets):
-                candidates.append(candidate)
-        source_visibility=region_visibility(source,annotations,fonts,assets)
+        visibility_cache={}
+        def rendered(design):
+            key=json.dumps(design,sort_keys=True)
+            if key not in visibility_cache:
+                visibility_cache[key]=region_visibility(design,annotations,fonts,assets)
+            return visibility_cache[key]
+        source_visibility=rendered(source)
         diagnostics['source_regions']=source_visibility
         expected={r['id']:r['retained'] for r in source_visibility['elements']}
         def measure(design):
-            result=region_visibility(design,annotations,fonts,assets)
+            result=dict(rendered(design))
             # Respect intentional source layering: recover losses introduced by
             # retargeting, rather than maximizing exposure beyond source intent.
             result['loss']=sum(max(0,expected.get(r['id'],0)-r['retained']) for r in result['elements'])/max(1,len(result['elements']))
@@ -337,6 +338,17 @@ def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=No
         visibility=measure(best[2])
         diagnostics['baseline_regions']=visibility
         diagnostics['repair_proposals']=0
+        # Acceptance requires a strictly positive source-relative gain. Once
+        # nothing is lost, no challenger can qualify; avoid its expensive render.
+        if visibility['loss']<=1e-3:
+            diagnostics['status']='unchanged'
+            diagnostics['short_circuit']='no_recoverable_loss'
+            return best,diagnostics
+        for method,design in proposals:
+            if evaluate is None:break
+            candidate=evaluate(method,design)
+            if candidate is not None and safe_challenger(source,original,candidate,assets):
+                candidates.append(candidate)
         # No introduced visibility loss means no reason to disturb source intent.
         if evaluate is not None and visibility['loss']>1e-3:
             for method,design in region_repairs(best[2],annotations,assets,source=source):

@@ -2,6 +2,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from math import log, sqrt, radians, cos, sin
+import json
 from engine.measure import TextMeasurer
 from engine.frontier import combine as combine_frontiers, normalize_leaf, prune_states
 from engine.validation import validate_source, validate_target, validate_output, rotated_bounds
@@ -254,13 +255,14 @@ def assess(source,output,backgrounds,measurer,assets_dir=None):
                 canvas_ink_overflow_px=canvas_ink_overflow,hierarchy_inversion=inversion)
 
 
-def responsive_candidates(source,target,units,backgrounds,measurer):
+def responsive_candidates(source,target,units,backgrounds,measurer,beam_scale=1):
     tw,th = target['width'],target['height']
     scale = sqrt(tw*th/(source['canvas']['width']*source['canvas']['height']))
     options = [leaf_states(source,u,target,measurer,scale) for u in units]
     if not options or any(not x for x in options):return
     margin = gap = min(tw,th)*.025
     def combine(children,**kwargs):
+        if 'cap' in kwargs:kwargs['cap']*=beam_scale
         return combine_frontiers(children,max_width=tw-2*margin,max_height=th-2*margin,**kwargs)
     orders = [list(range(len(units)))]
     horizontal = sorted(range(len(units)),key=lambda j:(units[j].bounds[0],units[j].bounds[1]))
@@ -320,6 +322,54 @@ def _quality_warning(quality):
             or bool(quality['missing_glyphs']) or raster['low_contrast_proxy']>.05
             or raster['sampled_low_contrast_proxy']>.05
             or (quality['minimum_font_size'] is not None and quality['minimum_font_size']<8))
+
+
+def expand_tiny_text_search(source,best,units,backgrounds,measurer,fonts,assets,pool):
+    """Bounded second search for small structural problems with unreadable copy.
+
+    Keep the original winner. Larger beams are proposals, never an unconditional
+    replacement. Eight units and two rendered finalists bound the extra work.
+    """
+    info=dict(status='not_needed',candidates=0,valid_candidates=0)
+    size=best[3]['minimum_font_size']
+    if size is None or size>=12 or best[3]['missing_glyphs']:return best,info
+    if len(units)>8:
+        info['status']='unit_budget';return best,info
+    from engine.semantics import safe_challenger
+    from engine.refine import refine_text
+    seen={json.dumps(row[2],sort_keys=True) for row in pool}
+    proposals=[]
+    for method,design in responsive_candidates(source,best[2]['canvas'],units,backgrounds,measurer,beam_scale=2):
+        key=json.dumps(design,sort_keys=True)
+        if key in seen:continue
+        seen.add(key);info['candidates']+=1
+        if validate_output(source,best[2]['canvas'],design):continue
+        proxy,quality=evaluate_candidate(source,design,backgrounds,measurer,assets)
+        info['valid_candidates']+=1;proposals.append((proxy,method,design,quality))
+    original=best;floor={e['id']:e['font_size'] for e in original[2]['elements'] if e['type']=='text'}
+    for proxy,method,design,quality in sorted(proposals,key=lambda row:-row[0])[:2]:
+        refined=refine_text(source,design,units,backgrounds,measurer,assets)
+        if refined is not None:
+            refined_proxy,refined_quality=evaluate_candidate(source,refined,backgrounds,measurer,assets)
+            if refined_proxy>proxy:proxy,quality,design=refined_proxy,refined_quality,refined
+        # Independent text enlargement can invert source priority. Constrain
+        # lower-priority copy before measuring; never shrink below the incumbent.
+        design=deepcopy(design)
+        by_id={e['id']:e for e in design['elements']}
+        source_text=sorted((e for e in source['elements'] if e['type']=='text'),key=lambda e:-e['font_size'])
+        for text in source_text:
+            element=by_id[text['id']]
+            ceilings=[by_id[higher['id']]['font_size'] for higher in source_text
+                      if higher['font_size']>text['font_size']*1.25]
+            if ceilings:element['font_size']=max(floor[text['id']],min(element['font_size'],min(ceilings)))
+        proxy,quality=evaluate_candidate(source,design,backgrounds,measurer,assets)
+        if any(e['font_size']<floor[e['id']] for e in design['elements'] if e['type']=='text'):continue
+        raster=raster_diagnostics(design,fonts,assets)
+        score=proxy-PIXEL_CONTRAST_WEIGHT*raster['low_contrast_proxy']-PIXEL_BUSYNESS_WEIGHT*raster['busyness_proxy']
+        candidate=(score,method+'+expanded-search',design,dict(quality,raster=raster,selection_score=score))
+        if score>best[0]+1e-6 and safe_challenger(source,best,candidate,assets):best=candidate
+    info['status']='selected' if best is not original else 'unchanged'
+    return best,info
 
 
 def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None):
@@ -411,6 +461,7 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             candidates.append(('glyph-recovery',recovered));valid.append((proxy,'glyph-recovery',recovered,quality))
             if score>best[0] and raster['low_contrast_proxy']<=best[3]['raster']['low_contrast_proxy']+1e-6:
                 best=(score,best[1]+'+glyph-recovery',recovered,dict(quality,raster=raster,selection_score=score))
+    best,expanded=expand_tiny_text_search(source,best,units,backgrounds,measurer,fonts_dir,assets_dir,valid)
     from engine.semantics import select_with_semantics
     def evaluate_region_repair(method,design):
         candidates.append((method,design))
@@ -422,8 +473,8 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
         return score,method,design,dict(quality,raster=raster,selection_score=score)
     best,semantic=select_with_semantics(source,best,ranked,fonts_dir,assets_dir,
         evaluate=evaluate_region_repair,context=region_context,proposals=region_proposals)
-    return best[2],dict(best[3],method=best[1],candidates=len(candidates),valid_candidates=len(valid),
-        semantic=semantic,approximate_frontier=True,quality_warning=_quality_warning(best[3]))
+    return best[2],dict(best[3],method=best[1],candidates=len(candidates)+expanded['candidates'],valid_candidates=len(valid)+expanded['valid_candidates'],
+        expanded_search=expanded,semantic=semantic,approximate_frontier=True,quality_warning=_quality_warning(best[3]))
 
 
 def resize(source,target_canvas):

@@ -188,3 +188,18 @@ class RegionRepairTests(unittest.TestCase):
             evaluate=broken,context=context,proposals=proposals)
         self.assertIs(old,result);self.assertEqual('fallback',info['status'])
         self.assertIn('proposal renderer unavailable',info['reason'])
+
+    def test_zero_loss_skips_proposal_evaluation_and_preserves_source_diagnostics(self):
+        source,_=fixture(self.assets);evaluate=evaluator(source,self.assets);old=evaluate('source-fit',source)
+        def fail(*args):raise AssertionError('cannot improve zero introduced loss')
+        result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=FakeModel([]),
+            evaluate=fail,proposals=[('unused',deepcopy(source))])
+        self.assertIs(old,result);self.assertEqual('no_recoverable_loss',info['short_circuit'])
+        self.assertEqual(0,info['baseline_regions']['loss'])
+
+    def test_visibility_cache_preserves_source_occlusion_diagnostics(self):
+        _,source=fixture(self.assets);evaluate=evaluator(source,self.assets);old=evaluate('source-fit',source)
+        result,info=select_with_semantics(source,old,[],FONTS,self.assets,mode='regions',model=FakeModel([]),evaluate=evaluate)
+        self.assertIs(old,result)
+        self.assertGreater(info['source_regions']['loss'],.5)
+        self.assertEqual(0,info['baseline_regions']['loss'])
