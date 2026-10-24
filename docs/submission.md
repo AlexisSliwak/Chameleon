@@ -12,21 +12,23 @@ This document distinguishes the prepared source package from organizer approval.
 | Official conversion path | renderer/; pinned cr-renderer dependency |
 | Model identity, hashes and notices | deployment/; included even when inference is off |
 | Setup, approach, dependencies and limitations | README.md |
-| Reproduction and difficult fixtures | tests/, scripts/, docs/development.md |
+| Local visual review, reproduction and difficult fixtures | tests/, scripts/, docs/development.md |
 
 The organizer recap dated October 23 explicitly requests setup, model information, dependencies and operating limitations. The captured main brief (sections 7.1–7.3) specifies code, Dockerfile and a short README, with offline execution and build-time dependencies. The current stage-one scope is the engine, consistent with the main brief; Express add-on work is for the finale. The older FAQ wording is preserved as source history, not used to add an Express gate to this submission. RULES.md and FAQ.md remain unchanged organizer references. Raw correspondence stays outside this repository.
 
 ## Verification for this preparation
 
-Audit baseline: ad1ebfa. Three independent audit assignments inspected engine/contract flows, packaging and evidence. No concrete production behavior defect was established. Corrected the stale no-model claim, clarified mixed stderr, and separated evaluator setup from development history.
+Audit baseline before history cleanup: ad1ebfa. Historical evidence retains its original commit IDs; the local history-cleanup report records their replacements. Three independent audit assignments inspected engine/contract flows, packaging and evidence. No concrete production behavior defect was established. Corrected the stale no-model claim, clarified mixed stderr, and separated evaluator setup from development history.
 
-Final checks are recorded locally in .project-audit/20261030T191619Z-6259bcf1/. Generated audit reports and test logs are not in the submission archive. Verification completed: 187 Python tests in one full discovery run, 16 JavaScript tests, three viewer-server tests and viewer syntax checks passed. All 14 Bash blocks passed syntax checks and all local documentation links resolved in the working workspace; optional generated-evidence links are labeled absent from a fresh clone. A tracked-file-only, cache-assisted linux/amd64 build passed both network-disabled public batches (off and regions). All six JSON/PNG pairs match the preceding release byte for byte; all 14 baked engine hashes match source. Repository visibility was verified PRIVATE. Dependencies were not downloaded again without cache; actual Mac performance remains unverified. Historical viewer checks are not stage-one acceptance criteria.
+After removing the Express add-on, verification in .project-audit/remove-express-20261030T205102Z/ passed all 187 Python tests and all three review-note JavaScript tests. A clean tracked-file build (cache-assisted, linux/amd64) passed both network-disabled public batches. All six JSON/PNG pairs match the preceding release byte for byte; all 14 baked engine hashes match source. The engine, renderer, assets, fonts, fixtures and evaluation tools are unchanged. Maintained documentation links and Bash examples passed checks. Historical logs retain their original commit IDs and test counts.
+
+Repository visibility was verified PRIVATE during preparation. Dependencies were not downloaded again without cache; actual Mac performance remains unverified. No Express integration is required for this engine-only preparation.
 
 ## Current clearance status
 
-Follow-up evidence is saved locally in .project-audit/clearance-20261030/. Adobe manifest package 3.11.0 passed both validation modes and rejected a missing-entrypoint negative control. The standalone viewer loaded real warmup source/output files and displayed preserved fields. The latest organizer email reiterates individual/team registration, same eligible university and U.S. Adobe Creative Campus eligibility for finalists. No new model approval or evaluator accounts were supplied in that email. Current repository access contains the owner and existing teammate, not a verified evaluator.
+Follow-up evidence is saved locally in .project-audit/clearance-20261030/. The latest organizer email reiterates individual/team registration, same eligible university and U.S. Adobe Creative Campus eligibility for finalists. No new model approval or evaluator accounts were supplied in that email. Current repository access contains the owner and existing teammate, not a verified evaluator.
 
-The portal/deadline check is complete. Historical manifest/browser checks are recorded above only as prior evidence; they are not prerequisites for the engine submission. Registration, model eligibility and evaluator access remain separate logistics/rules questions. Actual Mac testing is an outstanding engineering validation, not an invented organizer prerequisite to sending a submission. The user has instructed that no email or submission be sent yet.
+The portal/deadline check is complete. Registration, model eligibility and evaluator access remain separate logistics/rules questions. Actual Mac testing is an outstanding engineering validation, not an invented organizer prerequisite to sending a submission. The user has instructed that no email or submission be sent yet.
 
 ## External checks before sending
 
@@ -40,6 +42,6 @@ No hard stage-one execution-time cutoff is stated in the captured rules. This do
 
 ## Clean source package
 
-Use the committed repository revision as the source of truth. A Git source archive includes the engine code, documentation and original brand kit; the archive export rule excludes viewer/ for the finale. It excludes Git history, local credentials, environments, generated evaluation/audit runs and the outer correspondence workspace. Weights are retrieved and verified during Docker build, not stored in the source archive. This remains a private project package.
+Use the committed repository revision as the source of truth. A Git source archive includes the engine code, documentation and original brand kit; the Express add-on is removed from the repository and its published branch history. It excludes Git history, local credentials, environments, generated evaluation/audit runs and the outer correspondence workspace. Weights are retrieved and verified during Docker build, not stored in the source archive. This remains a private project package.
 
 The archive is a prepared deliverable, not an uploaded submission. The organizer’s actual access/upload instructions take precedence over any local packaging convention.

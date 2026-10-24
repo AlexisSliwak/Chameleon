@@ -112,18 +112,6 @@ Open the report directory's `index.html` file for source/output previews, per-el
 
 By default it reviews up to 64 nonempty text/image elements per design at a maximum raster dimension of 1024px. `--max-elements` (1–256) and `--max-size` (64–2048) adjust these explicit budgets; omitted IDs and text without reliable glyph coverage remain unassessed. This can require hundreds of diagnostic renders for a dense source/output pair. It is a development tool excluded from the production image, so mount the checkout as above. Contribution loss cannot identify a covered face or logo, and glyph contrast is not WCAG certification. Inspect original PNGs at native size and use the anonymous A/B workflow for independent preference comparisons. See [evaluation evidence and limitations](../research/perceptual-evaluation.txt).
 
-## Finale-only viewer reference
-
-This existing viewer is reserved for possible finale work, is excluded from stage-one source archives, and is not a submission requirement or current work item. The linked viewer sources are available in the full Git checkout only.
-
-With Python 3.10+ on the local Linux host:
-
-```bash
-python3 viewer/serve.py
-```
-
-Open `http://localhost:5241/` and select original/output PNG and JSON files. The viewer compares fields and dimensions; it does not render JSON or certify pixel fidelity. [Viewer instructions](../viewer/README.md) cover trusted local HTTPS, manifest-v2 sideloading, tests and the SDK action that imports one flattened PNG into Express. Local preview is separate from live Express validation and from the offline engine.
-
 ## How selection works—and its limits
 
 - Source fitting preserves explicit groups and source anchors while fitting real text widths and font sizes.
@@ -142,4 +130,4 @@ Open `http://localhost:5241/` and select original/output PNG and JSON files. The
 
 Dense banners can still have tiny type, weak hierarchy, overlap or subject occlusion. Ordered-flow repair samples a finite set of widths and text tiers, caps row frontiers and abstains above 64 layout units; it cannot prove global infeasibility. Very long unbreakable tokens may not fit a narrow canvas even at tiny type under the unchanged converter and content rules. A structurally valid result and a successful render do not establish legibility. The selected result includes no private diagnostics; inspect stderr/evaluation reports for quality warnings. No image regeneration or text rewriting is implemented. Optional local vision-language inference proposes asset regions; deterministic checks control acceptance.
 
-Keep the project repository private. Final hardware/model limits, exact deadline cutoff, intentional-bleed interpretation and the stage-one viewer requirement remain unresolved in the captured organizer material. This code has not been submitted or certified by Adobe.
+Keep the project repository private. Final hardware/model limits and intentional-bleed interpretation remain unresolved in the captured organizer material. Stage one is engine-only; see submission readiness for the verified deadline and remaining external checks. This code has not been submitted or certified by Adobe.

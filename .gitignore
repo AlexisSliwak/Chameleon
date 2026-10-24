@@ -21,7 +21,7 @@ venv/
 output/*
 !output/.gitkeep
 
-# Private local evaluation evidence and viewer certificates
+# Private local evaluation evidence and private certificates
 .project-evaluation/
 .project-audit/
 *.pem
