@@ -112,7 +112,9 @@ Open the report directory's `index.html` file for source/output previews, per-el
 
 By default it reviews up to 64 nonempty text/image elements per design at a maximum raster dimension of 1024px. `--max-elements` (1–256) and `--max-size` (64–2048) adjust these explicit budgets; omitted IDs and text without reliable glyph coverage remain unassessed. This can require hundreds of diagnostic renders for a dense source/output pair. It is a development tool excluded from the production image, so mount the checkout as above. Contribution loss cannot identify a covered face or logo, and glyph contrast is not WCAG certification. Inspect original PNGs at native size and use the anonymous A/B workflow for independent preference comparisons. See [evaluation evidence and limitations](../research/perceptual-evaluation.txt).
 
-## Review in the viewer
+## Finale-only viewer reference
+
+This existing viewer is reserved for possible finale work, is excluded from stage-one source archives, and is not a submission requirement or current work item. The linked viewer sources are available in the full Git checkout only.
 
 With Python 3.10+ on the local Linux host:
 

@@ -57,7 +57,7 @@ Our resource trial used `--cpus 8 --memory 8g`; these are local measurement sett
 
 ## Verification and limitations
 
-The submission audit passed all 187 Python tests in one complete run, 16 JavaScript tests and three viewer-server tests. A tracked-file build (cache-assisted) passed offline public runs with guidance off and on; all six JSON/PNG pairs match the prior release, and all 14 baked engine files match current source. See [submission readiness](docs/submission.md) for the final verification record and remaining external checks.
+The submission audit passed all 187 Python tests in one complete run, 16 JavaScript tests and three viewer-server tests in the wider development repository. A tracked-file build (cache-assisted) passed offline public runs with guidance off and on; all six JSON/PNG pairs match the prior release, and all 14 baked engine files match current source. See [submission readiness](docs/submission.md) for the final verification record and remaining external checks.
 
 To test current source against the built runtime:
 
@@ -68,7 +68,7 @@ docker run --rm --platform linux/amd64 --network none \
   chameleon-engine -m unittest discover -s tests
 ```
 
-This mount tests the checkout; the build/run command above tests baked production code. Development tests, scripts and the viewer are excluded from the engine image. [Development and visual evaluation](docs/development.md) provides native PNG galleries, difficult fixtures, manual comparisons and the viewer checks.
+This mount tests the checkout; the build/run command above tests baked production code. Development tests, scripts and the viewer are excluded from the engine image. [Development and visual evaluation](docs/development.md) provides native PNG galleries, difficult fixtures and manual comparisons.
 
 The latest [performance study](research/performance-review.txt) measured 29% less summed resize time with guidance off and 24% less with regions on across eight development cases run twice. Seven cases retained identical outputs. One difficult banner improved body text from 8 to 14px and its action label from 5 to 8px, at greater latency for that case. These are host measurements, not MacBook results or independent held-out quality evidence.
 
@@ -76,8 +76,8 @@ Dense or infeasible canvases can still produce tiny text, clipping, weak hierarc
 
 ## Submission contents
 
-Submit this private repository’s code, Dockerfile and README using the organizer’s submission channel. The repository includes the schema, original assets/fonts, renderer, dependency/model manifests, tests and [viewer add-on](viewer/README.md). Do not submit the outer personal research/correspondence workspace, local virtual environments or generated audit/evaluation directories. Keep evaluator access explicit; do not make the repository public.
+Submit this private repository’s code, Dockerfile and README using the organizer’s submission channel. Stage one contains the engine, schema, original assets/fonts, renderer, dependency/model manifests, tests and run instructions. Do not submit the outer personal research/correspondence workspace, local virtual environments or generated audit/evaluation directories. Keep evaluator access explicit; do not make the repository public.
 
-The supplied FAQ calls the viewer required but unscored, while the captured main brief’s stage-one list specifies engine/code/Dockerfile/README. The viewer is included conservatively. It supports local source/output comparison and flattened PNG import; actual authenticated Adobe Express sideload/import remains unverified. Its connected SDK is separate from offline engine execution.
+Stage one is the engine submission. Adobe Express add-on development belongs to the finale and is not a stage-one setup or acceptance step. Existing viewer source is retained separately in the repository for possible future work and excluded from Git source archives and the production image.
 
-The current organizer email sets the deadline at **October 30, 2026, 11:59 PM Pacific Time**. The live form is reachable; official manifest validation and basic browser comparison pass. Before sending, resolve the remaining checks in [submission readiness](docs/submission.md): final team/registration details, private evaluator access, model eligibility and live viewer requirements. Code preparation does not submit the project or establish organizer approval.
+The current organizer email sets the deadline at **October 30, 2026, 11:59 PM Pacific Time**. The live form is reachable. Before sending, resolve the remaining checks in [submission readiness](docs/submission.md): final team/registration details, private evaluator access and model eligibility. Code preparation does not submit the project or establish organizer approval.
