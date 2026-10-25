@@ -30,13 +30,19 @@ For each successful `<task>.json`, the runner writes `<task>_output.json` and `<
 
 ## Approach
 
-1. Measure actual font glyphs, image alpha support, explicit groups and inferred backing relationships.
-2. Generate source-preserving fits, bounded responsive row/column/split layouts, editorial arrangements and repeated-card layouts. Sampled frontiers balance footprint and utility; they are not an exhaustive optimizer.
-3. Rank valid candidates using source-relative composition and typography, then inspect rendered contrast and busyness for a small shortlist.
-4. Attempt bounded flow, grid and text refinements for weak layouts. A wider retry for tiny text preserves each incumbent font-size floor and source hierarchy. Retain the incumbent unless the candidate passes the relevant guards and improves the selection score.
-5. Validate conservation, target canvas, styles and rotated bounds independently; render the selected design with the pinned official converter/renderer.
+Chameleon treats design retargeting as a constrained layout search. It uses the source design to infer which elements belong together, generates arrangements for the target canvas, and selects one automatically. The objective is to preserve the design's identity and hierarchy while keeping its content readable as the aspect ratio changes.
 
-There is one production engine and one selected result per task. Source fitting is an internal candidate. Scores, font thresholds and search budgets are engineering choices, not Adobe’s scoring formula. The engine never rewrites copy or regenerates asset pixels. It conservatively preserves styles, group IDs and stacking, and enforces strict canvas bounds; these policies are stricter than some unresolved rule interpretations.
+The default pipeline has five stages:
+
+1. **Measure the source.** Measure text with the supplied fonts and identify the visible extent of transparent images. Combine explicit groups and inferred relationships, such as text on a backing rectangle, into internal layout units. These units guide placement without changing the submitted element IDs or group memberships.
+2. **Generate alternatives.** Start with a layout that fits the original composition to the target. Explore rows, columns, split panels, arrangements of headlines and images, and repeated-card layouts where the source structure supports them. Search budgets and pruning limit the number of size and placement combinations evaluated.
+3. **Compare valid layouts.** Reject candidates that violate the output contract. Rank the remaining candidates using text size, hierarchy, alignment, grouping, image prominence, and deviation from the source composition. Render a small shortlist to measure contrast and visual busyness. The valid source-fit candidate stays in this comparison as a baseline.
+4. **Repair weak results.** When the selected layout has tiny text, overflow, or excessive overlap, try additional flow and grid arrangements. Targeted refinements can enlarge text and compact text panels; a wider search can revisit layouts when text remains too small. Each pass applies its own preservation and quality guards before accepting an improvement over the current result.
+5. **Validate and export.** Independently check element conservation, literal text, font families, assets, styles, and rotated canvas bounds. Render the selected design through the pinned official converter and renderer, then verify the PNG format and dimensions before publishing the output pair.
+
+Optional **region guidance** adds subject awareness to this search. Transparent assets use their visible alpha bounds; a local vision-language model proposes subject regions for other images. These regions guide additional layout candidates and repairs aimed at reducing cropping or occlusion. Renderer-based visibility measurements and deterministic guards control acceptance. The model does not write the final design or generate replacement imagery; setup and eligibility limitations are described below.
+
+There is one production engine and one selected result per task. The search is bounded, and its scores are engineering heuristics rather than Adobe's scoring formula or a guarantee of visual quality. The engine preserves styles, group IDs, stacking order, and strict canvas bounds as conservative policies. For the detailed selection rules and visual review workflow, see [development and evaluation](docs/development.md#how-selection-worksand-its-limits).
 
 ## Dependencies and optional model
 
