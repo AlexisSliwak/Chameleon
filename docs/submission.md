@@ -18,11 +18,18 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
-Audit baseline before history cleanup: ad1ebfa. Historical evidence retains its original commit IDs; the local history-cleanup report records their replacements. Three independent audit assignments inspected engine/contract flows, packaging and evidence. No concrete production behavior defect was established. Corrected the stale no-model claim, clarified mixed stderr, and separated evaluator setup from development history.
+The final readiness audit tested a clean Git export of 1b7ac95. Subsequent audit changes affect submission documentation only. Three independent reviews covered the engine contract, packaging and organizer instructions; a cross-review challenged the findings. Two documentation inconsistencies were corrected. No new production defect was established in the inspected paths.
 
-After removing the Express add-on, verification in .project-audit/remove-express-20261030T205102Z/ passed all 187 Python tests and all three review-note JavaScript tests. A clean tracked-file build (cache-assisted, linux/amd64) passed both network-disabled public batches. All six JSON/PNG pairs match the preceding release byte for byte; all 14 baked engine hashes match source. The engine, renderer, assets, fonts, fixtures and evaluation tools are unchanged. Maintained documentation links and Bash examples passed checks. Historical logs retain their original commit IDs and test counts.
+Local evidence is retained in .project-audit/20261030T212753Z-61b02632/ and excluded from the submission package:
 
-Repository visibility was verified PRIVATE during preparation. Dependencies were not downloaded again without cache; actual Mac performance remains unverified. No Express integration is required for this engine-only preparation.
+- All 187 Python tests and three review-note JavaScript tests passed from the exported source.
+- A cache-assisted linux/amd64 build passed network-disabled public batches with guidance off and on. All six JSON/PNG pairs match the preceding verified release.
+- Additional baked-runner checks rejected invalid and empty inputs, removed stale failed outputs and completed the next valid task with unchanged JSON/PNG results.
+- Maintained documentation links and Bash examples passed checks. Original organizer captures, renderer, engine, assets, fonts and evaluation tools remain unchanged.
+- Both pinned model download URLs responded successfully with the expected file lengths. This verifies availability, not a complete cold download or model eligibility.
+- GitHub visibility was checked as private, with the owner and existing teammate as collaborators. No evaluator identity or access procedure was supplied in the captured sources.
+
+Dependencies were not downloaded again without cache. Actual Mac/reference-machine performance, hidden-test quality and organizer model eligibility remain unverified. Express integration is outside stage-one scope. Historical audit logs retain their original commit IDs and test counts.
 
 ## Current clearance status
 
@@ -30,13 +37,23 @@ Follow-up evidence is saved locally in .project-audit/clearance-20261030/. The l
 
 The portal/deadline check is complete. Registration, model eligibility and evaluator access remain separate logistics/rules questions. Actual Mac testing is an outstanding engineering validation, not an invented organizer prerequisite to sending a submission. The user has instructed that no email or submission be sent yet.
 
-## External checks before sending
+## Submit and freeze the evaluated version
 
-- The live form and October 30 deadline email were checked: **October 30, 2026, 11:59 PM Pacific Time**. The form writes PST, while the current email repeatedly says Pacific Time/PT; use the Pacific deadline rather than assuming an extra hour. The latest short link resolves to the archived form. Team name is required; team-size choices are two or three. Later pages require the registered team name before review. No submission has been made.
-- Grant the designated evaluators access to the private repository using the organizer’s instructions. Do not infer a reviewer account or make the repository public.
-- Confirm model approval and the size cap. The default off mode avoids inference but the image still contains the model/runtime. If packaged-model eligibility is refused, a packaging change and fresh verification are needed before submission.
-- Verify the final machine limits and run the image on the actual Mac/reference environment. Local WSL/Docker results do not establish Apple Silicon latency or peak memory.
-- Confirm registration and any applicable prize/travel eligibility separately from code correctness.
+One team member submits for the whole team through the [official form](https://forms.cloud.microsoft/r/i4KNM7VmxS). The organizer email requests the registered team name, each teammate's name and registered email, university, major, GitHub repository URL and January 11–13, 2027 finale availability. It explicitly says no separate file upload is needed. These later fields are described by the email; only the initial form page and team-name validation were inspected directly. Follow any additional instructions shown in the form.
+
+1. Finish the intended changes, push the final revision and record its full commit ID. Confirm that the repository contains the engine, Dockerfile, README, dependencies and original assets/fonts needed by the documented build.
+2. Keep the repository private. Enter its URL in the form. Providing the URL does not grant access: follow any evaluator-access instructions supplied by Adobe or the form. The captured correspondence does not identify evaluator accounts or permissions; do not invent invitations or make the repository public.
+3. Verify the registered roster and form answers, including any applicable participation or finalist eligibility details. The saved thread confirms an existing team registration, while later degree/eligibility clarification remains unanswered in the captured material.
+4. Submit before **October 30, 2026, 11:59 PM Pacific Time** per the current organizer email. The form labels the time PST; do not assume an extra hour. Save the submission confirmation and the final commit ID.
+5. Leave the submitted branch unchanged after freezing it unless Adobe permits corrections. This is our recommended way to keep the evaluated version identifiable. The brief requires submission before code freeze but does not prescribe a Git tag, release, branch lock or commit-ID field. Keep later development separate.
+
+No email, invitation or form submission is authorized by these instructions alone. The current user instruction is to prepare and verify only.
+
+## Unresolved requirements and validation limits
+
+- **Model eligibility:** the brief refers to an approved-model list and size cap that are absent from the captured material. Check any final published restrictions against deployment/model.json. Inference is off by default, but weights and runtime remain in the image. Public access and licensing do not establish eligibility. The sources do not prescribe an individual model-approval email. A required packaging change would need fresh verification before freezing.
+- **Evaluator access:** the repository must remain private; the access procedure is not specified in the captured sources. Repository delivery is not established until evaluators can access it through Adobe's chosen process.
+- **Reference hardware:** exact final machine limits and actual Mac performance remain unverified. Local WSL/Docker results establish neither Apple Silicon latency nor peak memory there. Testing on that machine is an engineering recommendation, not a stated condition for submitting the form.
 
 No hard stage-one execution-time cutoff is stated in the captured rules. This does not imply unlimited memory or hardware resources. No official quality score, independent held-out aesthetic win or competition rank has been established.
 
