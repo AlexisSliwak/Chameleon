@@ -18,18 +18,18 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
-The final readiness audit tested a clean Git export of 1b7ac95. Subsequent audit changes affect submission documentation only. Three independent reviews covered the engine contract, packaging and organizer instructions; a cross-review challenged the findings. Two documentation inconsistencies were corrected. No new production defect was established in the inspected paths.
+The latest correctness audit started from 22f1725 and fixed five reproduced issues: local-model HTTP errors bypassing fallback, invalid advisor modes bypassing identity checks, incomparable or failed anonymous review pairs, successful harness exits for invalid results, and hidden browser-storage warnings. Three independent reviews and a cross-review checked the changes. No additional production defect was established in the inspected paths.
 
-Local evidence is retained in .project-audit/20261030T212753Z-61b02632/ and excluded from the submission package:
+Latest local evidence is retained in .project-audit/glitches-20261030T214835Z-d3d4c5/ and excluded from the source package:
 
-- All 187 Python tests and three review-note JavaScript tests passed from the exported source.
-- A cache-assisted linux/amd64 build passed network-disabled public batches with guidance off and on. All six JSON/PNG pairs match the preceding verified release.
-- Additional baked-runner checks rejected invalid and empty inputs, removed stale failed outputs and completed the next valid task with unchanged JSON/PNG results.
-- Maintained documentation links and Bash examples passed checks. Original organizer captures, renderer, engine, assets, fonts and evaluation tools remain unchanged.
-- Both pinned model download URLs responded successfully with the expected file lengths. This verifies availability, not a complete cold download or model eligibility.
-- GitHub visibility was checked as private, with the owner and existing teammate as collaborators. No evaluator identity or access procedure was supplied in the captured sources.
+- All 200 Python tests and five review-note JavaScript tests passed against an isolated source snapshot, including new regression tests that fail against the previous behavior.
+- A cache-assisted linux/amd64 build passed network-disabled public batches with guidance off and on. All six JSON/PNG pairs match the preceding verified release; all 14 baked engine files match the tested source.
+- Model fallback coverage includes a real truncated HTTP response over loopback. Review-tool tests retain invalid artifacts, reject mismatched comparison inputs and preserve notes when browser persistence fails.
+- Maintained documentation links and Bash examples passed checks. Original organizer captures, renderer, assets and fonts remain unchanged.
 
-Dependencies were not downloaded again without cache. Actual Mac/reference-machine performance, hidden-test quality and organizer model eligibility remain unverified. Express integration is outside stage-one scope. Historical audit logs retain their original commit IDs and test counts.
+The preceding readiness audit in .project-audit/20261030T212753Z-61b02632/ also checked actual runner failure cleanup, public model download URLs and private GitHub visibility. These are dated observations, not a new organizer approval or live recheck of access. Historical evidence retains its original commit IDs.
+
+Dependencies were not downloaded again without cache. Actual Mac/reference-machine performance, hidden-test quality and organizer model eligibility remain unverified. Express integration is outside stage-one scope. Existing frozen galleries retain their original scripts; generate a new run to use the corrected review-note behavior.
 
 ## Current clearance status
 
