@@ -248,15 +248,21 @@ def region_repairs(design, annotations, assets, limit=16, source=None):
                     if count>=limit:return
 
 
+def advisor_mode(mode=None):
+    mode=os.environ.get('CHAMELEON_ADVISOR','off') if mode is None else mode
+    if mode not in ('off','regions'):
+        raise ValueError('CHAMELEON_ADVISOR must be off or regions')
+    return mode
+
+
 def prepare_region_pool(source, ranked, fonts, assets):
     """Annotate once and diversify geometry before the pixel shortlist is chosen.
 
     This side branch never changes the deterministic incumbent. Its proposals
     compete later under the same non-compensating guards and rendered visibility.
     """
-    mode=os.environ.get('CHAMELEON_ADVISOR','off')
+    mode=advisor_mode()
     if mode=='off':return [],None
-    if mode!='regions':raise ValueError('CHAMELEON_ADVISOR must be off or regions')
     if len(source['elements'])>64:return [],None
     root=Path(__file__).resolve().parents[1]
     assets=Path(assets or root/'brand_kit/assets')
@@ -290,8 +296,7 @@ def prepare_region_pool(source, ranked, fonts, assets):
 
 
 def select_with_semantics(source,best,ranked,fonts,assets, *, model=None,mode=None,evaluate=None,context=None,guided=(),proposals=()):
-    mode=os.environ.get('CHAMELEON_ADVISOR','off') if mode is None else mode
-    if mode not in ('off','regions'):raise ValueError('CHAMELEON_ADVISOR must be off or regions')
+    mode=advisor_mode(mode)
     diagnostics=dict(mode=mode,status='disabled' if mode=='off' else 'unchanged',comparisons=[])
     if mode=='off':return best,diagnostics
     root=Path(__file__).resolve().parents[1]

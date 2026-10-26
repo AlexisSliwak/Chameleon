@@ -1,5 +1,6 @@
 import copy
 import hashlib
+from http.client import IncompleteRead
 from io import BytesIO
 import json
 from pathlib import Path
@@ -191,6 +192,20 @@ class SemanticTests(unittest.TestCase):
         self.assertIs(old,result);self.assertEqual(0,m.calls)
         result,info=select_with_semantics(self.source,old,[new],self.fonts,self.assets,model=m,mode='regions')
         self.assertIs(old,result);self.assertEqual('fallback',info['status'])
+
+    def test_broken_model_transport_retains_the_deterministic_candidate(self):
+        old=candidate(self.source);design=copy.deepcopy(self.source)
+        design['elements'][0]['x']=55
+        model=LocalModel();self.addCleanup(model.close)
+        model.url='http://127.0.0.1:1'
+        with patch.object(model,'start'),patch.object(model.http,'open',side_effect=IncompleteRead(b'partial')):
+            result,info=select_with_semantics(self.source,old,[candidate(design,'new')],
+                self.fonts,self.assets,model=model,mode='regions')
+        self.assertIs(old,result)
+        self.assertEqual('fallback',info['status'])
+        self.assertIn('IncompleteRead',info['reason'])
+        self.assertIsNotNone(model.failure)
+        self.assertFalse(_CACHE)
 
     def test_region_only_selection_improves_visible_subject(self):
         old_design=copy.deepcopy(self.source)

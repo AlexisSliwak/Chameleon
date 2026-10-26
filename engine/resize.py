@@ -375,6 +375,8 @@ def expand_tiny_text_search(source,best,units,backgrounds,measurer,fonts,assets,
 def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None):
     problems = validate_source(source)+validate_target(target_canvas)
     if problems:raise ValueError('; '.join(problems))
+    from engine.semantics import advisor_mode, prepare_region_pool
+    advisor_mode()
     measurer = TextMeasurer(fonts_dir)
     backgrounds = background_indices(source)
     units = make_units(source,backgrounds,assets_dir)
@@ -395,7 +397,6 @@ def resize_with_diagnostics(source,target_canvas,fonts_dir=None,assets_dir=None)
             score,quality = evaluate_candidate(source,design,backgrounds,measurer,assets_dir)
             valid.append((score,method,design,quality))
     if not valid:raise ValueError('No candidate satisfies independent output validation')
-    from engine.semantics import prepare_region_pool
     region_proposals,region_context=prepare_region_pool(source,valid,fonts_dir,assets_dir)
     # Rerank a bounded shortlist using actual unchanged imagery. This is a
     # weak signal: average contrast cannot recognize subjects or certify text.

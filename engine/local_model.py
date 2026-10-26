@@ -6,6 +6,7 @@ once per process; startup/request failure trips a circuit breaker for the batch.
 import atexit
 import base64
 import hashlib
+from http.client import HTTPException
 from io import BytesIO
 import json
 import os
@@ -113,7 +114,7 @@ class LocalModel:
             choice = body['choices'][0]
             if choice.get('finish_reason') != 'stop': raise ModelUnavailable('incomplete model response')
             return json.loads(choice['message']['content'])
-        except (OSError, ValueError, KeyError, IndexError, TypeError, AttributeError, StopIteration, ModelUnavailable) as exc:
+        except (OSError, HTTPException, ValueError, KeyError, IndexError, TypeError, AttributeError, StopIteration, ModelUnavailable) as exc:
             self.failure = str(exc) or type(exc).__name__
             self.close()
             raise ModelUnavailable(self.failure) from exc
