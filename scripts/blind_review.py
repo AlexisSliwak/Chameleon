@@ -38,11 +38,21 @@ def create(before,after,output,seed=0):
     # explicit errors, never silently dropped from a favorable comparison.
     for directory,run in ((before,old),(after,new)):
         for row in run.values():
+            if (row.get('status') not in ('rendered-valid','checks-passed','review')
+                    or row.get('valid') is False or row.get('errors')
+                    or row.get('validation_errors') or row.get('source_error')):
+                raise ValueError('comparison requires successful cases: '+case_key(row))
+            target=row.get('target')
+            if (not isinstance(target,dict) or set(target)!={'width','height'}
+                    or any(type(v) is not int or v<=0 for v in target.values())):
+                raise ValueError('missing or invalid target: '+case_key(row))
             for field in ('png','json','source_png'):
                 path=(directory/row[field]).resolve()
                 if not path.is_relative_to(directory.resolve()):raise ValueError('path escapes run')
                 if not path.is_file():raise ValueError('missing output: '+str(path))
     for k in old:
+        if old[k]['target']!=new[k]['target']:
+            raise ValueError('target canvases differ: '+k)
         if (before/old[k]['source_png']).read_bytes()!=(after/new[k]['source_png']).read_bytes():
             raise ValueError('source previews differ: '+k)
     output.mkdir(parents=True,exist_ok=False)

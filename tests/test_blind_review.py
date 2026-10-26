@@ -15,7 +15,7 @@ class BlindReviewTests(unittest.TestCase):
             folder.mkdir();(folder/'output.png').write_bytes(value)
             (folder/'source.png').write_bytes(b'same source')
             (folder/'output.json').write_text('{}')
-            (folder/'results.json').write_text(json.dumps(dict(cases=[dict(id='family--target',fixture='family.json',png='output.png',json='output.json',source_png='source.png')])))
+            (folder/'results.json').write_text(json.dumps(dict(cases=[dict(id='family--target',fixture='family.json',target=dict(width=100,height=100),status='checks-passed',png='output.png',json='output.json',source_png='source.png')])))
         self.output=self.root/'pack'
 
     def test_anonymous_pairs_keep_source_and_separate_answer_key(self):
@@ -66,3 +66,43 @@ class BlindReviewTests(unittest.TestCase):
         second=create(self.before,self.after,self.root/'second',91)
         self.assertEqual(first,second)
         with self.assertRaises(FileExistsError):create(self.before,self.after,self.output)
+
+    def test_same_case_id_cannot_hide_a_changed_target(self):
+        path=self.after/'results.json';data=json.loads(path.read_text())
+        data['cases'][0]['target']['width']=200
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError,'target'):create(self.before,self.after,self.output)
+        self.assertFalse(self.output.exists())
+
+    def test_failed_invalid_or_incomplete_runs_cannot_be_anonymized(self):
+        path=self.after/'results.json';original=json.loads(path.read_text())
+        for status in ('failed','rendered-invalid','unknown',None):
+            with self.subTest(status=status):
+                data=json.loads(json.dumps(original));data['cases'][0]['status']=status
+                path.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError,'successful'):create(self.before,self.after,self.output)
+                self.assertFalse(self.output.exists())
+
+    def test_supported_success_statuses_keep_visual_warnings(self):
+        for status in ('rendered-valid','checks-passed','review'):
+            path=self.after/'results.json';data=json.loads(path.read_text())
+            data['cases'][0].update(status=status,flags=['Tiny text'])
+            path.write_text(json.dumps(data))
+            self.assertEqual(1,len(create(self.before,self.after,self.root/status)))
+
+    def test_missing_or_malformed_targets_fail_before_creating_pack(self):
+        for target in (None,{},dict(width=0,height=100),dict(width=True,height=100)):
+            path=self.after/'results.json';data=json.loads(path.read_text())
+            data['cases'][0]['target']=target;path.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError,'target'):create(self.before,self.after,self.output)
+            self.assertFalse(self.output.exists())
+
+    def test_success_label_cannot_hide_recorded_contract_or_source_errors(self):
+        path=self.after/'results.json';original=json.loads(path.read_text())
+        for error in ({'source_error':'source preview failed'}, {'valid':False},
+                      {'errors':['missing ID']}, {'validation_errors':['changed content']}):
+            with self.subTest(error=error):
+                data=json.loads(json.dumps(original));data['cases'][0].update(error)
+                path.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError,'successful'):create(self.before,self.after,self.output)
+                self.assertFalse(self.output.exists())

@@ -1,6 +1,6 @@
 # Development and visual evaluation
 
-Run commands from the repository root after the [README](../README.md) build. Saved galleries are local evidence, absent from a fresh clone; the commands generate new runs. Historical counts below describe their dated experiments, not the current release test count.
+Run commands from the repository root after the [README](../README.md) build. Saved galleries are local evidence, absent from a fresh clone; the commands generate new runs. Each gallery freezes its review scripts, so generate a fresh run to use updated note-handling code. Historical counts below describe their dated experiments, not the current release test count.
 
 ## Test and inspect rendered comparisons
 
@@ -34,7 +34,9 @@ docker run --rm --network none --entrypoint python \
   --output-dir ".project-evaluation/challenges-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 ```
 
-Use its `--baseline-dir` to compare the selected output against a previous production-engine run with identical fixture hashes. This is a regression check, not a second executable implementation. Saved reports retain the historical `full` result key for compatibility. Earlier baseline/ablation experiments remain archived outside the active workflow.
+Both comparison harnesses return a nonzero exit status for invalid output contracts, failed output renders or failed source previews. Their reports retain the affected cases and artifacts; visual warnings alone do not fail a valid run. Summaries distinguish invalid contracts from render failures.
+
+Use the challenge harness's `--baseline-dir` to compare the selected output against a previous production-engine run with identical fixture hashes. This is a regression check, not a second executable implementation. Saved reports retain the historical `full` result key for compatibility. Earlier baseline/ablation experiments remain archived outside the active workflow.
 
 ## Review the hardest cases
 
@@ -53,7 +55,7 @@ docker run --rm --network none --entrypoint python \
 python3 -m http.server 5262 --bind 127.0.0.1 --directory "$chameleon_review"
 ```
 
-Open `http://localhost:5262/` (stop the server with Ctrl-C). You can also open the generated `index.html` directly. Compare original and output, switch to **100%** to inspect actual size, filter warnings/failures and record a judgment for each case. Notes stay in that browser; **Export review notes** saves a portable JSON copy. Import accepts notes only for the exact same run. No notes are uploaded.
+Open `http://localhost:5262/` (stop the server with Ctrl-C). You can also open the generated `index.html` directly. Compare original and output, switch to **100%** to inspect actual size, filter warnings/failures and record a judgment for each case. Notes stay in that browser; **Export review notes** saves a portable JSON copy. Import accepts notes only for the exact same run. No notes are uploaded. If browser storage is unavailable, imported notes remain usable in the open page and the warning stays visible; export them before closing.
 
 Each case invokes the real CLI in an isolated process and retains its input, output JSON/PNG, logs, timing and checks. The suite independently checks element/content preservation and PNG dimensions, freezes fixtures/harness and records engine/asset/font hashes. It retains failures in the gallery and returns nonzero for execution, preservation, source-render or integrity failure. The default 120-second per-case timeout is a local harness budget, not an official limit. Font-size and contrast warnings guide manual review; they do not fail the contract or certify visual quality. A fresh output directory is required.
 
@@ -79,7 +81,7 @@ The output directory must not already exist. The gallery retains every case, sou
 
 ## Anonymous manual comparison
 
-Create a local review pack from two completed evaluation directories containing the same cases and source previews:
+Create a local review pack from two completed evaluation directories containing the same cases, target dimensions and source previews. Every case must have a successful contract/render status; failed cases or source-preview errors reject the entire pack before output is created. They are never silently omitted. Valid results with visual warnings remain eligible for manual comparison:
 
 ```bash
 python3 scripts/blind_review.py create --before .project-evaluation/grid-v1-hard --after .project-evaluation/text-final-hard --output .project-evaluation/blind-review-new --seed 1031

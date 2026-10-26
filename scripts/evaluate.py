@@ -224,9 +224,11 @@ def main(argv=None):
                'unique_source_target_pairs': sum(len(f['targets']) for f in manifest['fixtures']),
                'methods': {method: {'cases': sum(r['method'] == method for r in rows),
                                    'valid_contract': sum(r['method'] == method and r['valid'] is True for r in rows),
+                                   'invalid_contract': sum(r['method'] == method and r['valid'] is False for r in rows),
                                    'rendered': sum(r['method'] == method and 'png' in r for r in rows),
                                    'failed': sum(r['method'] == method and r['status'] == 'failed' for r in rows)}
                            for method in METHODS},
+               'source_render_failures': sum('error' in p for p in previews.values()),
                'gallery': str(output / 'index.html'),
                'interpretation': 'Development diagnostics only. No automatic quality superiority or official score claim.'}
     summary['code_unchanged_during_run'] = all(
@@ -234,7 +236,9 @@ def main(argv=None):
         for path,expected in manifest['code_sha256'].items())
     write_json(output / 'summary.json', summary)
     print(json.dumps(summary, indent=2))
-    return 1 if any(r['status'] == 'failed' for r in rows) or not summary['code_unchanged_during_run'] else 0
+    return 1 if (any(r['status'] != 'rendered-valid' for r in rows)
+                 or summary['source_render_failures']
+                 or not summary['code_unchanged_during_run']) else 0
 
 
 if __name__ == '__main__':

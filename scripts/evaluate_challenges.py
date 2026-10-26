@@ -258,6 +258,7 @@ def main(argv=None):
                'unique_source_target_pairs': sum(len(f['targets']) for f in manifest['fixtures']),
                'methods': {method: {'cases': sum(r['method'] == method for r in rows),
                                    'valid_contract': sum(r['method'] == method and r['valid'] is True for r in rows),
+                                   'invalid_contract': sum(r['method'] == method and r['valid'] is False for r in rows),
                                    'rendered': sum(r['method'] == method and 'png' in r for r in rows),
                                    'failed': sum(r['method'] == method and r['status'] == 'failed' for r in rows)}
                            for method in METHODS},
@@ -266,7 +267,7 @@ def main(argv=None):
                'interpretation': 'Development diagnostics only. No automatic quality superiority or official score claim.'}
     write_json(output / 'summary.json', summary)
     print(json.dumps(summary, indent=2))
-    return 1 if any(r['status'] == 'failed' for r in rows) or any('error' in p for p in previews.values()) else 0
+    return 1 if any(r['status'] != 'rendered-valid' for r in rows) or summary['source_render_failures'] else 0
 
 
 if __name__ == '__main__':

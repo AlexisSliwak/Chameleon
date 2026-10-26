@@ -38,8 +38,11 @@ if (typeof document !== "undefined") {
     if (saved) reviews = validateReview(JSON.parse(saved), data.run_id, ids);
   } catch { status.textContent = "Saved notes unavailable. You can still review and export this session."; }
   function persist() {
-    try { localStorage.setItem(key, JSON.stringify(bundle())); }
-    catch { status.textContent = "Browser storage unavailable. Export notes before closing this page."; }
+    try { localStorage.setItem(key, JSON.stringify(bundle())); return true; }
+    catch {
+      status.textContent = "Browser storage unavailable. Export notes before closing this page.";
+      return false;
+    }
   }
   function update() {
     let visible = 0, reviewed = 0;
@@ -83,7 +86,10 @@ if (typeof document !== "undefined") {
     try {
       if (file.size > 2000000) throw new Error("Review file is too large.");
       const incoming = validateReview(JSON.parse(await file.text()), data.run_id, ids);
-      reviews = incoming; persist(); populate(); status.textContent = "Imported notes for this exact run.";
+      reviews = incoming;
+      const saved = persist();
+      populate();
+      if (saved) status.textContent = "Imported notes for this exact run.";
     } catch (error) { status.textContent = error.message; }
     event.target.value = "";
   });
