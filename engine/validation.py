@@ -26,7 +26,9 @@ def _is_type(value, name):
             'array': lambda: isinstance(value, list),
             'string': lambda: isinstance(value, str),
             'number': lambda: _finite_number(value),
-            'integer': lambda: type(value) is int and _finite_number(value),
+            # JSON Schema integers include 100.0 and 1e2, but not booleans.
+            'integer': lambda: _finite_number(value) and
+                               (type(value) is int or value.is_integer()),
             'null': lambda: value is None}[name]()
 
 

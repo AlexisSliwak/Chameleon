@@ -12,6 +12,28 @@ def source():
 
 
 class ValidationTests(unittest.TestCase):
+    def test_integral_json_numbers_are_valid_in_integer_fields(self):
+        s = source()
+        s['canvas'] = {'width': 100.0, 'height': 1e2}
+        s['elements'][0].update(z_index=0.0, max_lines=2.0,
+                                style_runs=[{'start': 0.0, 'end': 4.0}])
+        self.assertEqual([], validate_source(s))
+        self.assertEqual([], validate_target(s['canvas']))
+        self.assertEqual([], validate_output(s, s['canvas'], copy.deepcopy(s)))
+
+    def test_integer_fields_reject_fractional_nonfinite_and_boolean_values(self):
+        for value in (1.5, True, False, '1', float('nan'), float('inf'), -float('inf')):
+            with self.subTest(value=value):
+                self.assertTrue(validate_target({'width': value, 'height': 100}))
+                for field in ('z_index', 'max_lines'):
+                    s = source()
+                    s['elements'][0][field] = value
+                    self.assertTrue(validate_source(s))
+                for field in ('start', 'end'):
+                    s = source()
+                    s['elements'][0]['style_runs'] = [{'start': 0, 'end': 4, field: value}]
+                    self.assertTrue(validate_source(s))
+
     def test_valid_and_geometry_changes(self):
         s = source()
         o = copy.deepcopy(s)
