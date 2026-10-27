@@ -13,6 +13,7 @@ from pathlib import Path
 
 from PIL import Image
 from engine.validation import rotated_bounds
+from engine.frontier import scaled_dimensions
 
 
 @dataclass
@@ -169,7 +170,9 @@ def _unit(output,unit,slot,preferred,measurer,target):
     l,t,r,b=_bounds([output[i] for i in unit.indices]); s=min(w/max(1,r-l),h/max(1,b-t))
     edits=[]
     for i in unit.indices:
-        e=output[i]; p=dict(e,x=(e['x']-l)*s,y=(e['y']-t)*s,width=max(.001,e['width']*s),height=max(.001,e['height']*s))
+        e=output[i]
+        width, height = scaled_dimensions(e, s)
+        p=dict(e,x=(e['x']-l)*s,y=(e['y']-t)*s,width=width,height=height)
         if p['type']=='text':
             p,_=measurer.fit(p,p['width'],p['height'],min(preferred,e['font_size']*s))
         edits.append((i,p))

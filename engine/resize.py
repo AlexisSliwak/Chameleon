@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from math import log, sqrt, radians, cos, sin
 import json
 from engine.measure import TextMeasurer
-from engine.frontier import combine as combine_frontiers, normalize_leaf, prune_states
+from engine.frontier import combine as combine_frontiers, normalize_leaf, prune_states, scaled_dimensions
 from engine.validation import validate_source, validate_target, validate_output, rotated_bounds
 from engine.pixels import raster_diagnostics
 from engine.composition import composition_metrics, optical_bounds
@@ -115,8 +115,9 @@ def leaf_states(source, unit, target, measurer, scale):
             edits,utility,valid = {},0.,True
             for i in unit.indices:
                 original = elements[i]
+                width, height = scaled_dimensions(original, s)
                 e = dict(original,x=(original['x']-l)*s,y=(original['y']-t)*s,
-                         width=max(.001,original['width']*s),height=max(.001,original['height']*s))
+                         width=width,height=height)
                 if e['type'] == 'text':
                     e,ext = measurer.fit(e,e['width'],e['height'],original['font_size']*s)
                     valid &= ext.fits(e['width'],e['height']) and not ext.missing_glyphs
@@ -167,7 +168,8 @@ def source_fit(source,target,units,backgrounds,measurer):
         edits = {}
         for i in unit.indices:
             e = source['elements'][i]
-            p = dict(e,x=(e['x']-l)*s,y=(e['y']-t)*s,width=max(.001,e['width']*s),height=max(.001,e['height']*s))
+            width, height = scaled_dimensions(e, s)
+            p = dict(e,x=(e['x']-l)*s,y=(e['y']-t)*s,width=width,height=height)
             if e['type'] == 'text':
                 if len(unit.indices)==1 and not e.get('rotation'):
                     p['width'] = min(tw,max(p['width'],e['width']*sx))

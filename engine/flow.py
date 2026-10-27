@@ -7,7 +7,7 @@ interpretation of an arbitrary source or an exact continuous optimizer.
 """
 from math import sqrt
 
-from engine.frontier import State, normalize_leaf, prune_states
+from engine.frontier import State, normalize_leaf, prune_states, scaled_dimensions
 from engine.composition import visible_image, DEFAULT_ASSETS
 
 
@@ -178,7 +178,8 @@ def _choices(source, unit, width, height, floor, base, scale, art_scale, measure
     edits = {}
     for i in unit.indices:
         old = elements[i]
-        e = dict(old,x=(old['x']-l)*s,y=(old['y']-t)*s,width=max(.001,old['width']*s),height=max(.001,old['height']*s))
+        scaled_width, scaled_height = scaled_dimensions(old, s)
+        e = dict(old,x=(old['x']-l)*s,y=(old['y']-t)*s,width=scaled_width,height=scaled_height)
         if old['type']=='text':
             e,extent = measurer.fit(e,e['width'],e['height'],old['font_size']*s)
             if not extent.fits(e['width'],e['height']) or extent.missing_glyphs or e['font_size']+.01<floor:

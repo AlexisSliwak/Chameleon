@@ -56,6 +56,18 @@ def _ordered(states):
     return result
 
 
+def scaled_dimensions(element, scale):
+    """Keep positive image proportions even when one side is subpixel.
+
+    Independent minimum-side clamps distort thin images. Retain the existing
+    minimum for text, shapes and degenerate image boxes that have no ratio.
+    """
+    width, height = element['width'] * scale, element['height'] * scale
+    if element['type'] == 'image' and element['width'] > 0 and element['height'] > 0:
+        return width, height
+    return max(.001, width), max(.001, height)
+
+
 def normalize_leaf(
     placements: Mapping[int, Mapping], utility: float = 0,
     interface: Hashable = "default", rotations: Mapping[int, float] | None = None,
