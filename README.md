@@ -63,7 +63,7 @@ Our resource trial used `--cpus 8 --memory 8g`; these are local measurement sett
 
 ## Verification and limitations
 
-The latest regression run passed all 200 Python tests and five review-note JavaScript tests. Coverage includes local-model transport failures, advisor configuration, comparison validity and browser-storage failure handling. A tracked-file build (cache-assisted) passed offline public runs with guidance off and on; all six JSON/PNG pairs match the prior release, and all 14 baked engine files match current source. See [submission readiness](docs/submission.md) for the final verification record and remaining external checks.
+The latest regression run passed all 205 Python tests and five review-note JavaScript tests. Coverage includes integral JSON number representations, subpixel image proportions, local-model transport failures and review-tool failure handling. A tracked-file build (cache-assisted) passed offline public runs with guidance off and on; all six JSON/PNG pairs match the prior release, and all 14 baked engine files match current source. Six additional numeric and thin-image tasks passed in each mode using the official renderer. See [submission readiness](docs/submission.md) for the verification record and remaining external checks.
 
 To test current source against the built runtime:
 

@@ -18,9 +18,18 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
-The latest correctness audit started from 22f1725 and fixed five reproduced issues: local-model HTTP errors bypassing fallback, invalid advisor modes bypassing identity checks, incomparable or failed anonymous review pairs, successful harness exits for invalid results, and hidden browser-storage warnings. Three independent reviews and a cross-review checked the changes. No additional production defect was established in the inspected paths.
+The latest engine edge-case audit started from 860ba05 and fixed two supported-input failures: integral values written with decimal points were rejected, and minimum-side clamps distorted very thin images until every candidate failed validation. Numeric checks now follow JSON Schema integer semantics; four rigid-fitting paths preserve positive image proportions. Three independent reviews checked the edge cases and remedies.
 
-Latest local evidence is retained in .project-audit/glitches-20261030T214835Z-d3d4c5/ and excluded from the source package:
+Evidence is retained in .project-audit/engine-edges-20261030T220218Z/ and excluded from the source package:
+
+- All 205 Python tests and five review-note JavaScript tests passed. The final subpixel regression was additionally strengthened and rerun with the original bottle asset and no renderer warnings.
+- A cache-assisted linux/amd64 build passed network-disabled public runs with guidance off and on. All six JSON/PNG pairs remain identical to the previous release; all 14 baked engine files match the tested source.
+- Six additional numeric and thin-image tasks passed in each mode, producing twelve real JSON/PNG pairs. Rotated and explicitly grouped thin images passed independent probes too.
+- Original schema, organizer captures, renderer, assets and fonts remain unchanged. These bounded tests do not establish exhaustive input coverage or visual superiority.
+
+The preceding correctness audit started from 22f1725 and fixed five reproduced issues: local-model HTTP errors bypassing fallback, invalid advisor modes bypassing identity checks, incomparable or failed anonymous review pairs, successful harness exits for invalid results, and hidden browser-storage warnings.
+
+That earlier evidence remains in .project-audit/glitches-20261030T214835Z-d3d4c5/:
 
 - All 200 Python tests and five review-note JavaScript tests passed against an isolated source snapshot, including new regression tests that fail against the previous behavior.
 - A cache-assisted linux/amd64 build passed network-disabled public batches with guidance off and on. All six JSON/PNG pairs match the preceding verified release; all 14 baked engine files match the tested source.
