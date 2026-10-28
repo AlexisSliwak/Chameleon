@@ -3,6 +3,51 @@ from engine.pixels import raster_diagnostics
 
 
 class RasterSignalTests(unittest.TestCase):
+    def test_inactive_style_colors_match_actual_rendered_pixels(self):
+        from copy import deepcopy
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from engine.main import render_to_png
+        from engine.resize import resize
+        from engine.validation import validate_output
+        root = Path(__file__).resolve().parents[1]
+        baseline = {'canvas': {'width': 160, 'height': 80}, 'elements': [
+            dict(id='bg', type='shape', shape_type='rectangle', x=0, y=0, width=160, height=80,
+                 fill_color='rgba(255,255,255,1)', z_index=0),
+            dict(id='text', type='text', x=10, y=10, width=140, height=60, content='AB CD',
+                 font_family='Solstice Sans', font_size=20, color='rgba(0,0,0,1)', z_index=1)]}
+        variants = [
+            # The renderer never parses these inactive numeric color channels.
+            # Reading every declared color used to abort the whole resize.
+            {'style_runs': [dict(start=100, end=200, color='rgba(' + '9'*400 + ',0,0,1)')]},
+            {'color': 'rgba(' + '9'*400 + ',0,0,1)',
+             'style_runs': [dict(start=0, end=100, color='rgba(0,0,0,1)')]},
+            {'style_runs': [dict(start=100, end=200, color='rgba(255,255,255,1)')]},
+            {'style_runs': [dict(start=4, end=1, color='rgba(255,255,255,1)')]},
+            {'style_runs': [dict(start=0, end=4, color='rgba(255,255,255,1)'), dict(start=0, end=4, color='rgba(0,0,0,1)')]},
+            {'color': 'rgba(255,255,255,1)', 'style_runs': [dict(start=0, end=100, color='rgba(0,0,0,1)')]},
+            {'style_runs': [dict(start=2, end=2, color='rgba(255,255,255,1)')]},
+        ]
+        with TemporaryDirectory() as temporary:
+            reference = Path(temporary)/'reference.png'
+            render_to_png(baseline, root/'brand_kit/assets', reference, root/'brand_kit/fonts')
+            expected = raster_diagnostics(baseline)
+            for variant in variants:
+                with self.subTest(variant=variant):
+                    design = deepcopy(baseline)
+                    design['elements'][1].update(variant)
+                    before = deepcopy(design)
+                    actual = Path(temporary)/'actual.png'
+                    render_to_png(design, root/'brand_kit/assets', actual, root/'brand_kit/fonts')
+                    self.assertEqual(reference.read_bytes(), actual.read_bytes())
+                    self.assertEqual(expected, raster_diagnostics(design))
+                    target = {'width': 120, 'height': 60}
+                    output = resize(design, target)
+                    self.assertEqual([], validate_output(design, target, output))
+                    self.assertEqual([], render_to_png(output, root/'brand_kit/assets',
+                                                      actual, root/'brand_kit/fonts'))
+                    self.assertEqual(before, design)
+
     def test_contrast_uses_composited_backdrop_and_text_alpha(self):
         design = {'canvas': {'width': 120, 'height': 60}, 'elements': [
             dict(id='background',type='shape',x=0,y=0,width=120,height=60,
@@ -17,6 +62,36 @@ class RasterSignalTests(unittest.TestCase):
         invisible = raster_diagnostics(design)
         self.assertAlmostEqual(invisible['mean_contrast_proxy'],1,places=3)
         self.assertGreater(invisible['low_contrast_proxy'],.7)
+
+    def test_wrapped_newline_color_does_not_count_as_visible_ink(self):
+        from copy import deepcopy
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from engine.main import render_to_png
+        root = Path(__file__).resolve().parents[1]
+        with TemporaryDirectory() as temporary:
+            for content in ('AB CD', 'AB\nCD'):
+                with self.subTest(content=content):
+                    design = {'canvas': {'width': 80, 'height': 100}, 'elements': [
+                        dict(id='text', type='text', x=10, y=10, width=30, height=80,
+                             content=content, font_family='Solstice Sans', font_size=20,
+                             color='rgba(0,0,0,1)')]}
+                    before = deepcopy(design)
+                    reference, actual = Path(temporary)/'before.png', Path(temporary)/'after.png'
+                    render_to_png(design, root/'brand_kit/assets', reference, root/'brand_kit/fonts')
+                    expected = raster_diagnostics(design)
+                    design['elements'][0]['style_runs'] = [dict(start=2, end=2, color='rgba(255,255,255,1)')]
+                    render_to_png(design, root/'brand_kit/assets', actual, root/'brand_kit/fonts')
+                    self.assertEqual(reference.read_bytes(), actual.read_bytes())
+                    self.assertEqual(expected, raster_diagnostics(design))
+                    self.assertNotIn('style_runs', before['elements'][0])
+
+    def test_single_character_style_uses_the_pinned_inclusive_endpoint(self):
+        design = {'canvas': {'width': 80, 'height': 40}, 'elements': [
+            dict(id='text', type='text', x=0, y=0, width=80, height=40, content='AB',
+                 font_family='Solstice Sans', font_size=20, color='rgba(0,0,0,1)',
+                 style_runs=[dict(start=0, end=0, color='rgba(255,255,255,1)')])]}
+        self.assertAlmostEqual(7/9, raster_diagnostics(design)['sampled_low_contrast_proxy'])
 
     def test_split_background_does_not_hide_invisible_text_in_average_gray(self):
         design={'canvas':{'width':200,'height':80},'elements':[

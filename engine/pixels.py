@@ -4,11 +4,12 @@ Local contrast/busyness are engineering signals, not subject recognition or an
 aesthetic judge. All asset pixels remain unchanged. No network or model loads.
 """
 from io import BytesIO
+from collections import defaultdict
 from math import floor, ceil
 from pathlib import Path
 
 from PIL import Image, ImageStat
-from renderer.converter.convert import _get_renderer, convert_chameleon_to_crello
+from renderer.converter.convert import _get_renderer, _append_text, convert_chameleon_to_crello
 from renderer.converter.colorutil import parse_rgba
 
 
@@ -33,7 +34,15 @@ def raster_diagnostics(design, fonts_dir=None, assets_dir=None):
              min(raster.width,ceil((e['x']+e['width'])*sx)),min(raster.height,ceil((e['y']+e['height'])*sy)))
         if box[2]<=box[0] or box[3]<=box[1]:continue
         stat = ImageStat.Stat(raster.crop(box))
-        colors = [e.get('color','rgba(0,0,0,1)')] + [r['color'] for r in e.get('style_runs',[]) if 'color' in r]
+        colors = [e.get('color','rgba(0,0,0,1)')]
+        if e.get('style_runs'):
+            # Use the pinned converter's wrapping, inclusive span endpoints and
+            # last-write precedence. Inactive colors do not paint any glyphs.
+            text = defaultdict(list)
+            _append_text(text, e, renderer.font_manager)
+            colors = list(dict.fromkeys(color for char, color in
+                zip(text['text'][0], text['text_color'][0]) if not char.isspace()))
+            if not colors: continue
         # Do not average colors before computing contrast: black-on-black can
         # disappear on half an image even if the average gray appears safe.
         # Nearest sampling preserves observed colors, with a fixed work budget.
