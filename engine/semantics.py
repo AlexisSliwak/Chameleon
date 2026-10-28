@@ -17,7 +17,7 @@ from PIL import Image, ImageChops, ImageDraw
 from renderer.converter.assets import _fit_image
 from renderer.converter.convert import _get_renderer, convert_chameleon_to_crello
 from engine.local_model import get_model, ModelUnavailable
-from engine.validation import validate_output
+from engine.validation import validate_output, _finite_number
 
 REGION_SCHEMA = {'type':'object','properties':{
     'kind':{'type':'string','enum':['subject','logo','none']},
@@ -64,7 +64,7 @@ def validate_region(value):
     if not isinstance(value, dict) or set(value) != {'kind','box'}: return None
     if value['kind'] not in ('subject','logo','none'): return None
     box = value['box']
-    if not isinstance(box,list) or len(box)!=4 or any(type(x) not in (int,float) or not math.isfinite(x) for x in box): return None
+    if not isinstance(box,list) or len(box)!=4 or any(not _finite_number(x) for x in box): return None
     if value['kind']=='none': return None
     l,t,r,b=box
     if not (0<=l<r<=1 and 0<=t<b<=1) or (r-l)*(b-t)<.005: return None
@@ -106,7 +106,7 @@ def annotate_assets(source, assets, model):
                     value=validate_region(response)
                     abstained=(isinstance(response,dict) and set(response)=={'kind','box'} and response['kind']=='none'
                                and isinstance(response['box'],list) and len(response['box'])==4
-                               and all(type(x) in (int,float) and math.isfinite(x) for x in response['box']))
+                               and all(_finite_number(x) for x in response['box']))
                     if value is None and not abstained:
                         raise ModelUnavailable('invalid asset region response')
         _CACHE[key]=(value,method)

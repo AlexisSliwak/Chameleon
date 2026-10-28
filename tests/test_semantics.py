@@ -50,6 +50,28 @@ class SemanticTests(unittest.TestCase):
             self.assertIsNone(validate_region(value))
         self.assertEqual('logo',validate_region(dict(kind='logo',box=[0,0,1,1]))['kind'])
 
+    def test_oversized_integer_responses_retain_the_deterministic_candidate(self):
+        from engine.semantics import prepare_region_pool
+        original = candidate(self.source, 'source-fit')
+        for kind in ('subject', 'none'):
+            for coordinate in (10**400, -(10**400)):
+                with self.subTest(kind=kind, coordinate_sign=coordinate > 0):
+                    # Actual decoded JSON data, not a model exception mock.
+                    response = json.loads(json.dumps(dict(kind=kind, box=[0, 0, coordinate, 1])))
+                    self.assertIsNone(validate_region(response))
+                    model = FakeModel([response])
+                    with patch.dict('os.environ', {'CHAMELEON_ADVISOR': 'regions'}), \
+                            patch('engine.semantics.get_model', return_value=model):
+                        proposals, context = prepare_region_pool(self.source, [original], self.fonts, self.assets)
+                    self.assertEqual([], proposals)
+                    self.assertEqual('fallback', context['status'])
+                    self.assertIn('invalid asset region response', context['reason'])
+                    result, info = select_with_semantics(self.source, original, [original],
+                        self.fonts, self.assets, model=model, mode='regions', context=context)
+                    self.assertIs(original, result)
+                    self.assertEqual('fallback', info['status'])
+                    self.assertFalse(_CACHE)
+
     def test_cache_uses_content_model_and_abstentions(self):
         m=FakeModel([dict(kind='none',box=[0,0,0,0])]*2)
         annotate_assets(self.source,self.assets,m);annotate_assets(self.source,self.assets,m)
