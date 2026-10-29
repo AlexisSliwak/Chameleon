@@ -18,9 +18,18 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
-The latest engine edge-case audit started from 860ba05 and fixed two supported-input failures: integral values written with decimal points were rejected, and minimum-side clamps distorted very thin images until every candidate failed validation. Numeric checks now follow JSON Schema integer semantics; four rigid-fitting paths preserve positive image proportions. Three independent reviews checked the edge cases and remedies.
+The latest runtime audit started from 96dfa99 and fixed two defects: inactive text-style colors distorted contrast measurements and could abort resizing, while oversized numbers in model responses escaped the fallback path. Contrast now uses the pinned converter's effective color assignments; malformed region coordinates retain the deterministic result.
 
-Evidence is retained in .project-audit/engine-edges-20261030T220218Z/ and excluded from the source package:
+Evidence is retained in .project-audit/runtime-review-20261030T221854Z-9298be/ and excluded from the source package:
+
+- All 209 Python tests and five review-note JavaScript tests passed. The final pixel test was additionally strengthened and rerun to cover ignored malformed colors through complete resizing and real rendering.
+- A cache-assisted linux/amd64 build passed network-disabled public runs with guidance off and on. All six JSON/PNG pairs remain identical to the prior release; all 14 baked engine files match the tested source.
+- Twenty mixed-group/rotation cases and eighteen text/style cases passed real source and output rendering. Independent probes reproduced both defects before correction and confirmed the fixes afterward.
+- Pixel comparisons establish corrected contrast signals, not a demonstrated aesthetic improvement or different winning layout. The malformed-response case is a tested failure mode, not an observed frequency estimate for the actual model.
+
+The preceding engine edge-case audit started from 860ba05 and fixed two supported-input failures: integral values written with decimal points were rejected, and minimum-side clamps distorted very thin images until every candidate failed validation. Numeric checks now follow JSON Schema integer semantics; four rigid-fitting paths preserve positive image proportions. Three independent reviews checked the edge cases and remedies.
+
+That evidence remains in .project-audit/engine-edges-20261030T220218Z/:
 
 - All 205 Python tests and five review-note JavaScript tests passed. The final subpixel regression was additionally strengthened and rerun with the original bottle asset and no renderer warnings.
 - A cache-assisted linux/amd64 build passed network-disabled public runs with guidance off and on. All six JSON/PNG pairs remain identical to the previous release; all 14 baked engine files match the tested source.
