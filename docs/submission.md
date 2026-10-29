@@ -18,6 +18,21 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
+The README review against 76b9aa2 checked the main brief, recap and saved submission correspondence. It found all requested topics covered: setup, approach, model information, dependencies and operating limitations. Both documented run commands were executed from an isolated checkout, including the command mounting custom assets/fonts. Each produced three real JSON/PNG pairs identical to the verified release. All Bash blocks and local links passed checks. This documentation-only change leaves production code unchanged; the 209-test regression record below remains the latest application test run.
+
+Evidence is retained in .project-audit/readme-review-20261030T222917Z-6123ed/. The requirements cross-check distinguishes technical preparation from external confirmation:
+
+| Requirement | Verified status / remaining limit |
+| --- | --- |
+| Engine, Dockerfile and README for stage one | Present; approach and execution documented. The main brief assigns the full Express add-on to the finale. |
+| Autonomous offline processing and real JSON/PNG output | Verified in network-disabled linux/amd64 runs, with contract and renderer tests. Hidden inputs and visual quality are not certified. |
+| Preserve IDs, text, fonts and original image assets | Enforced and regression-tested; original schema, renderer and brand kit remain unchanged. |
+| Build-time dependencies and accessible model weights | Pinned manifests, public weight URLs and checksum verification provided. Model eligibility against the organizer's list/size cap remains unverified. |
+| Clear setup, models, dependencies and limitations | Covered by the README and linked guides; both run commands executed successfully. |
+| Private repository and evaluator access | Repository privacy rechecked; evaluator delivery/access remains unverified. |
+| Submission and code freeze | Procedure documented from saved instructions. Registration details and actual submission remain outstanding; no submission or invitation was sent. |
+| Reference hardware | Exact resource limits and actual Mac performance remain unverified. Local measurements are labeled accordingly. |
+
 The latest runtime audit started from 96dfa99 and fixed two defects: inactive text-style colors distorted contrast measurements and could abort resizing, while oversized numbers in model responses escaped the fallback path. Contrast now uses the pinned converter's effective color assignments; malformed region coordinates retain the deterministic result.
 
 Evidence is retained in .project-audit/runtime-review-20261030T221854Z-9298be/ and excluded from the source package:
