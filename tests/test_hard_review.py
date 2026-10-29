@@ -2,6 +2,7 @@ import copy
 import json
 from pathlib import Path
 import sys
+import time
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -83,6 +84,21 @@ class ReviewHarnessTests(unittest.TestCase):
         result=execute([sys.executable,'-c',"import time;print('started',flush=True);time.sleep(10)"],.2,ROOT)
         self.assertTrue(result['timed_out'])
         self.assertIn('started',result['stdout'])
+
+    def test_timeout_stops_child_processes_and_later_cases_still_run(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            marker=Path(temporary)/'child-finished'
+            child="import time,pathlib;time.sleep(1);pathlib.Path("+repr(str(marker))+").write_text('leaked')"
+            parent="import subprocess,sys,time;p=subprocess.Popen([sys.executable,'-c',"+repr(child)+"]);print('child started',flush=True);time.sleep(10)"
+            result=execute([sys.executable,'-c',parent],.3,ROOT)
+            self.assertTrue(result['timed_out'])
+            self.assertIn('child started',result['stdout'])
+            time.sleep(1.2)
+            self.assertFalse(marker.exists(),'timed-out child kept executing')
+            following=execute([sys.executable,'-c',"print('next case')"],2,ROOT)
+            self.assertEqual(0,following['returncode'])
+            self.assertFalse(following['timed_out'])
+            self.assertIn('next case',following['stdout'])
 
     def test_launch_failure_is_recorded(self):
         result=execute(['/definitely/missing/chameleon-command'],1,ROOT)

@@ -10,10 +10,12 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -100,13 +102,21 @@ def quality_flags(layout):
 def execute(command, timeout, cwd):
     start = time.perf_counter()
     try:
-        result = subprocess.run(command,cwd=cwd,capture_output=True,text=True,timeout=timeout)
-        return dict(returncode=result.returncode,stdout=result.stdout,stderr=result.stderr,
-                    timed_out=False,seconds=time.perf_counter()-start)
-    except subprocess.TimeoutExpired as exc:
-        decode = lambda value: value.decode('utf-8',errors='replace') if isinstance(value,bytes) else value or ''
-        return dict(returncode=None,stdout=decode(exc.stdout),stderr=decode(exc.stderr),
-                    timed_out=True,seconds=time.perf_counter()-start)
+        # The Linux/macOS review harness owns an isolated process group. Killing
+        # only the engine can leave its local model server consuming resources.
+        with subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+                              text=True,start_new_session=True) as process:
+            timed_out=False
+            try:
+                stdout,stderr=process.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                timed_out=True
+                try:os.killpg(process.pid,signal.SIGKILL)
+                except ProcessLookupError:pass  # Group exited at the deadline.
+                stdout,stderr=process.communicate()
+            return dict(returncode=None if timed_out else process.returncode,
+                        stdout=stdout,stderr=stderr,timed_out=timed_out,
+                        seconds=time.perf_counter()-start)
     except OSError as exc:
         return dict(returncode=None,stdout='',stderr=type(exc).__name__+': '+str(exc),
                     timed_out=False,seconds=time.perf_counter()-start)
