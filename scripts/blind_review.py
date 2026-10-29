@@ -10,6 +10,10 @@ import json
 from pathlib import Path
 import random
 import shutil
+import sys
+
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from engine.validation import validate_target
 
 FIELDS=['case','preference','readability','faithfulness','hierarchy','severe_failure','notes']
 
@@ -23,6 +27,11 @@ def rows(directory):
     data=json.loads((directory/'results.json').read_text())
     for row in data['cases']:
         row=dict(row)
+        if validate_target(row.get('target')):
+            raise ValueError('missing or invalid target: '+str(row.get('id') or row.get('fixture')))
+        # JSON integers include 100.0. Canonicalize before deriving case IDs so
+        # equivalent numeric representations match even without explicit IDs.
+        row['target']={name:int(value) for name,value in row['target'].items()}
         if 'source_png' not in row:
             row['source_png']=data.get('source_previews',{}).get(row.get('fixture'),{}).get('png')
         key=case_key(row)
@@ -42,10 +51,6 @@ def create(before,after,output,seed=0):
                     or row.get('valid') is False or row.get('errors')
                     or row.get('validation_errors') or row.get('source_error')):
                 raise ValueError('comparison requires successful cases: '+case_key(row))
-            target=row.get('target')
-            if (not isinstance(target,dict) or set(target)!={'width','height'}
-                    or any(type(v) is not int or v<=0 for v in target.values())):
-                raise ValueError('missing or invalid target: '+case_key(row))
             for field in ('png','json','source_png'):
                 path=(directory/row[field]).resolve()
                 if not path.is_relative_to(directory.resolve()):raise ValueError('path escapes run')

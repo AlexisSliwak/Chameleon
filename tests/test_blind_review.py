@@ -91,11 +91,22 @@ class BlindReviewTests(unittest.TestCase):
             self.assertEqual(1,len(create(self.before,self.after,self.root/status)))
 
     def test_missing_or_malformed_targets_fail_before_creating_pack(self):
-        for target in (None,{},dict(width=0,height=100),dict(width=True,height=100)):
+        for target in (None,{},dict(width=0,height=100),dict(width=True,height=100),
+                       dict(width=1.5,height=100),dict(width=float('inf'),height=100)):
             path=self.after/'results.json';data=json.loads(path.read_text())
             data['cases'][0]['target']=target;path.write_text(json.dumps(data))
             with self.assertRaisesRegex(ValueError,'target'):create(self.before,self.after,self.output)
             self.assertFalse(self.output.exists())
+
+    def test_integral_float_targets_compare_with_and_without_explicit_ids(self):
+        for explicit_id in (True, False):
+            for folder, width in ((self.before,100),(self.after,100.0)):
+                path=folder/'results.json';data=json.loads(path.read_text())
+                data['cases'][0]['target']['width']=width
+                if not explicit_id:data['cases'][0].pop('id',None)
+                path.write_text(json.dumps(data))
+            output=self.root/('explicit' if explicit_id else 'derived')
+            self.assertEqual(1,len(create(self.before,self.after,output)))
 
     def test_success_label_cannot_hide_recorded_contract_or_source_errors(self):
         path=self.after/'results.json';original=json.loads(path.read_text())
