@@ -59,6 +59,8 @@ Open `http://localhost:5262/` (stop the server with Ctrl-C). You can also open t
 
 Each case invokes the real CLI in an isolated process and retains its input, output JSON/PNG, logs, timing and checks. The suite independently checks element/content preservation and PNG dimensions, freezes fixtures/harness and records engine/asset/font hashes. It retains failures in the gallery and returns nonzero for execution, preservation, source-render or integrity failure. The default 120-second per-case timeout is a local harness budget, not an official limit. Font-size and contrast warnings guide manual review; they do not fail the contract or certify visual quality. A fresh output directory is required.
 
+On timeout, the harness terminates the case's isolated process group, including its local model server, and retains captured logs before proceeding. This prevents a timed-out model process from consuming resources during later cases.
+
 Run the review-note logic tests with Node.js 18+:
 
 ```bash
@@ -88,6 +90,8 @@ python3 scripts/blind_review.py create --before .project-evaluation/grid-v1-hard
 ```
 
 These example runs exist only in the working workspace; use your own completed run paths on a fresh clone. Give reviewers only `blind-review-new/reviewer/`, which contains source previews, anonymous PNG pairs, `index.html` and `ratings.csv`. Keep the answer key private until ratings are complete. Each CSV dimension accepts A, B, tie or neither; severe failure accepts A, B, both or none. Leave unseen cases blank and retain every row.
+
+Comparison inputs must have successful statuses, matching source previews and equal target dimensions. Integer-valued JSON numbers such as `100` and `100.0` are equivalent, including when the case key is derived from its target rather than an explicit ID.
 
 ```bash
 python3 scripts/blind_review.py summarize --key .project-evaluation/blind-review-new/answer-key.json --ratings .project-evaluation/blind-review-new/reviewer/ratings.csv

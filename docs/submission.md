@@ -18,7 +18,9 @@ The organizer recap dated October 23 explicitly requests setup, model informatio
 
 ## Verification for this preparation
 
-The README review against 76b9aa2 checked the main brief, recap and saved submission correspondence. It found all requested topics covered: setup, approach, model information, dependencies and operating limitations. Both documented run commands were executed from an isolated checkout, including the command mounting custom assets/fonts. Each produced three real JSON/PNG pairs identical to the verified release. All Bash blocks and local links passed checks. This documentation-only change leaves production code unchanged; the 209-test regression record below remains the latest application test run.
+The code audit against 56a570f found no new production-engine defect in the inspected paths. It fixed two development-tool issues: harness timeouts now stop the case's process group, and anonymous comparisons accept equivalent integer-valued JSON representations. Production engine code and runtime contents remain unchanged. All 211 Python tests and five JavaScript tests passed. Fresh baked batches in both offline modes confirmed that invalid tasks remove stale output pairs, later valid tasks still complete, inputs remain unchanged and any task failure produces a nonzero batch exit. Evidence and limitations are retained in .project-audit/code-audit-20261030T223742Z-285ffa/.
+
+The README review against 76b9aa2 checked the main brief, recap and saved submission correspondence. It found all requested topics covered: setup, approach, model information, dependencies and operating limitations. Both documented run commands were executed from an isolated checkout, including the command mounting custom assets/fonts. Each produced three real JSON/PNG pairs identical to the verified release. All Bash blocks and local links passed checks. That documentation-only change left production code unchanged.
 
 Evidence is retained in .project-audit/readme-review-20261030T222917Z-6123ed/. The requirements cross-check distinguishes technical preparation from external confirmation:
 
