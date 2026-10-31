@@ -98,7 +98,7 @@ docker run --rm --platform linux/amd64 --network none \
 
 This mount tests the checkout; the build/run command above tests baked production code. Development tests and scripts are excluded from the engine image. [Development and visual evaluation](docs/development.md) provides native PNG galleries, difficult fixtures and manual comparisons.
 
-The [performance study](research/performance-review.txt) reports local measurements, not MacBook results or independent held-out quality evidence.
+Performance measurements to date are local trials, not MacBook results or independent held-out quality evidence.
 
 Dense or infeasible canvases can still produce tiny text, clipping, weak hierarchy or occlusion. Unsupported glyphs remain reported; recovery cannot supply missing characters. Opaque-subject localization is imperfect. Geometry/proxy checks do not certify readability, visual superiority or competition rank. The prior 87-case visual evaluation predates the latest performance/readability change.
 

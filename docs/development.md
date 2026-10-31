@@ -79,7 +79,7 @@ The additional suite deliberately includes infeasible targets and source defects
 docker run --rm --network none --entrypoint python -v "$PWD:/app" chameleon-engine scripts/review_hard_cases.py --suite-dir tests/fixtures/extreme-challenges --output-dir .project-evaluation/extreme-review-new
 ```
 
-The output directory must not already exist. The gallery retains every case, source preview, real PNG, JSON, failure and diagnostic. The [split-layout investigation](../research/split-layout-study.txt) records rejected split/spacing alternatives; [open its side-by-side comparisons](../.project-evaluation/split-layout/index.html) or the [refreshed source/output review](../.project-evaluation/split-layout/review/index.html). Its 120-second per-case harness timeout is a local test budget, not an official hackathon limit.
+The output directory must not already exist. The gallery retains every case, source preview, real PNG, JSON, failure and diagnostic. Its 120-second per-case harness timeout is a local test budget, not an official hackathon limit.
 
 ## Anonymous manual comparison
 
@@ -116,7 +116,7 @@ docker run --rm --network none --entrypoint python \
 
 Open the report directory's `index.html` file for source/output previews, per-element findings and contribution images. `report.json` contains composition metrics, input/runtime hashes, render count, elapsed time and coverage; `human-review.json` is an unfilled structured human-review record. The tool refuses to overwrite an existing directory, rejects contract-invalid outputs and retains processing failures in `failure.json`. Run the engine first if the output JSON does not yet exist.
 
-By default it reviews up to 64 nonempty text/image elements per design at a maximum raster dimension of 1024px. `--max-elements` (1–256) and `--max-size` (64–2048) adjust these explicit budgets; omitted IDs and text without reliable glyph coverage remain unassessed. This can require hundreds of diagnostic renders for a dense source/output pair. It is a development tool excluded from the production image, so mount the checkout as above. Contribution loss cannot identify a covered face or logo, and glyph contrast is not WCAG certification. Inspect original PNGs at native size and use the anonymous A/B workflow for independent preference comparisons. See [evaluation evidence and limitations](../research/perceptual-evaluation.txt).
+By default it reviews up to 64 nonempty text/image elements per design at a maximum raster dimension of 1024px. `--max-elements` (1–256) and `--max-size` (64–2048) adjust these explicit budgets; omitted IDs and text without reliable glyph coverage remain unassessed. This can require hundreds of diagnostic renders for a dense source/output pair. It is a development tool excluded from the production image, so mount the checkout as above. Contribution loss cannot identify a covered face or logo, and glyph contrast is not WCAG certification. Inspect original PNGs at native size and use the anonymous A/B workflow for independent preference comparisons.
 
 ## How selection works—and its limits
 

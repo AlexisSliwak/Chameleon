@@ -26,3 +26,6 @@ output/*
 .project-audit/
 *.pem
 *.key
+
+# Research stays outside version control
+/research/
