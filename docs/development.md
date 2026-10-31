@@ -69,7 +69,7 @@ node --test tests/review_notes.test.cjs
 
 The Python suite above includes source validity, unchanged official-reference, preservation, timeout, failure-retention and gallery-escaping tests. Rebuild the image after engine changes before generating new production evidence.
 
-The initial advanced run rendered all 28 cases with zero structural/execution failures and 22 visual-warning cases. The expanded Python suite passed 81 tests; the review-note and existing viewer JavaScript suites passed 16 tests. Browser checks verified filtering, native zoom, note persistence and export/import. Extreme outputs include 1–3px text and a typography case with ink/overflow warnings: these are exposed weaknesses, not visual passes. Local artifacts: [gallery](../.project-evaluation/hard-review-v1/index.html) and [inspection notes](../.project-evaluation/hard-review-v1/review-report.md).
+The initial advanced run rendered all 28 cases with zero structural/execution failures and 22 visual-warning cases. The expanded Python suite passed 81 tests; the review-note and existing viewer JavaScript suites passed 16 tests. Browser checks verified filtering, native zoom, note persistence and export/import. Extreme outputs include 1–3px text and a typography case with ink/overflow warnings: these are exposed weaknesses, not visual passes. Historical galleries and inspection notes are local development artifacts and are not included in a fresh clone. Use the commands above to generate a new review.
 
 ## Extreme-case review
 
@@ -97,7 +97,7 @@ Comparison inputs must have successful statuses, matching source previews and eq
 python3 scripts/blind_review.py summarize --key .project-evaluation/blind-review-new/answer-key.json --ratings .project-evaluation/blind-review-new/reviewer/ratings.csv
 ```
 
-The summary preserves unrated cases, severe failures and source-family grouping. It does not infer competition rank. The prepared [28-case review pack](../.project-evaluation/contrast-distribution/blind-hard/reviewer/index.html) evaluates the preceding readability improvement; no human ratings have been entered.
+The summary preserves unrated cases, severe failures and source-family grouping. It does not infer competition rank. Review packs are generated locally with the commands above; they are not included in the repository. No independent human preference results have been established.
 
 ## Inspect deeper visual evidence
 
